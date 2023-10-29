@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  homesvc
+  namespace: default
+  labels:
+    app:  homesvc
+spec:
+  selector:
+    matchLabels:
+      app: homesvc
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  homesvc
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name:  homesvc
+        image:  syukurilexs/homesvc:latest
+        imagePullPolicy: Always
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: MQTT_HOST
+          value: 192.168.0.10
+        ports:
+        - containerPort:  3000
+          name:  homesvc
+        volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+        - name: datavolume
+          mountPath: /data
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Kuala_Lumpur
+        - name: datavolume
+          hostPath:
+            path: /data/syukurilexs-home-svc
+      restartPolicy: Always
