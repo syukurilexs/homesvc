@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { DeviceOrm } from './device.entity';
+import { SceneActionOrm } from './scene-action.entity';
 
 @Entity()
 export class SceneOrm {
@@ -25,4 +25,13 @@ export class SceneOrm {
 
   @OneToMany((type) => SceneDeviceOrm, (sceneDevice) => sceneDevice.scene)
   sceneDevice: SceneDeviceOrm[];
+  
+  @OneToMany(
+    () => SceneActionOrm,
+    (sceneAction) => sceneAction.scene,
+    {
+      cascade: ['insert', 'update']
+    }
+  )
+  sceneAction: SceneActionOrm[];
 }

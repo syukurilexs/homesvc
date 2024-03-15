@@ -60,7 +60,7 @@ export class DeviceOrm {
   )
   selectedAction: SelectedActionOrm[];
 
-  @Column({default: ''})
+  @Column({ default: '' })
   remark: string;
 
   @CreateDateColumn()

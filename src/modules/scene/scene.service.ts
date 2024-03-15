@@ -11,17 +11,19 @@ import { UpdateStateSceneDto } from './dto/update-state-scene.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_DEVICE_UPDATE_STATE } from 'src/utils/constants';
 import { DeviceToggle } from 'src/utils/types/device-toggle.type';
+import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
+import { ActionOrm } from 'src/typeorm/action.entity';
 
 @Injectable()
 export class SceneService {
   constructor(
+    @InjectRepository(ActionOrm) private actionRepository: Repository<ActionOrm>,
+    @InjectRepository(SceneActionOrm) private sceneActionRepository: Repository<SceneActionOrm>,
     @InjectRepository(SceneOrm) private sceneRepository: Repository<SceneOrm>,
-    @InjectRepository(DeviceOrm)
-    private deviceRepository: Repository<DeviceOrm>,
-    @InjectRepository(SceneDeviceOrm)
-    private sceneDeviceRepository: Repository<SceneDeviceOrm>,
+    @InjectRepository(DeviceOrm) private deviceRepository: Repository<DeviceOrm>,
+    @InjectRepository(SceneDeviceOrm) private sceneDeviceRepository: Repository<SceneDeviceOrm>,
     private readonly eventEmitter: EventEmitter2
-  ) {}
+  ) { }
 
   async updateState(id: string, updateSceneState: UpdateStateSceneDto) {
     // Get device id
@@ -104,6 +106,11 @@ export class SceneService {
         sceneDevice: {
           device: true,
         },
+        sceneAction: {
+          action: {
+            device: true,
+          }
+        },
       },
     });
   }
@@ -111,7 +118,8 @@ export class SceneService {
   async update(id: number, updateSceneDto: UpdateSceneDto) {
     // Get scene
     const scene = await this.sceneRepository.findOne({
-      where: {id}
+      where: { id },
+      relations: { sceneAction: true }
     })
 
     scene.name = updateSceneDto.name;
@@ -170,7 +178,39 @@ export class SceneService {
       sceneDeviceCreated.push(sceneDevice);
     });
 
-    this.sceneDeviceRepository.save(sceneDeviceCreated);
+    const actions = await this.actionRepository.find({
+      where: { id: In(updateSceneDto.actions) },
+      relations: { device: true }
+    });
+
+    const updatedScene = this.sceneDeviceRepository.save(sceneDeviceCreated);
+
+    if (scene.sceneAction.length === 0) {
+      actions.forEach(async (action) => {
+        const sceneAction = new SceneActionOrm();
+        sceneAction.action = action;
+        sceneAction.scene = scene;
+        await this.sceneActionRepository.save(sceneAction);
+      })
+    } else {
+      /**
+       * This section need to be update
+       * current implementation is not optimise
+       * and just quick solution
+       */
+      // Clear previous selected action
+      scene.sceneAction.forEach(async (sceneAction) => {
+        await this.sceneActionRepository.remove(sceneAction);
+      })
+
+      // Add updated scene action
+      actions.forEach(async (action) => {
+        const sceneAction = new SceneActionOrm();
+        sceneAction.action = action;
+        sceneAction.scene = scene;
+        const hehe = await this.sceneActionRepository.save(sceneAction);
+      })
+    }
 
     return this.sceneDeviceRepository.find({
       where: { sceneId: id },
