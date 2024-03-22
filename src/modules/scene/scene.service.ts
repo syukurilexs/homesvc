@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { SceneDeviceOrm } from 'src/typeorm/scene-device.entity';
@@ -25,22 +25,37 @@ export class SceneService {
     private readonly eventEmitter: EventEmitter2
   ) { }
 
-  async updateState(id: string, updateSceneState: UpdateStateSceneDto) {
+
+  /**
+   * The function to trigger and activate all the light / fan from scene
+   * @date 3/21/2024 - 7:07:42 AM
+   *
+   * @async
+   * @param {number} id
+   * @returns {unknown}
+   */
+  async triggerScene(id: number) {
+    // Get a scene from database based on scene id
+    const scene = await this.sceneRepository.findOne({ where: { id }, relations: { sceneDevice: true } });
+
+    console.log(scene)
+
     // Get device id
-    const deviceIdList = updateSceneState.sceneDevice.map((x) => {
+    const deviceIdList = scene.sceneDevice.map((x) => {
       return x.deviceId;
     });
 
-    // Get devices from database
+    // Get devices from database to change device state
     const devices = await this.deviceRepository.find({
       where: { id: In(deviceIdList) },
     });
 
     // Update device state according to scene state
+    // Note: The actual state is in device table !!!
     for (let index = 0; index < devices.length; index++) {
       devices[index].state =
-        updateSceneState.sceneDevice[
-          updateSceneState.sceneDevice.findIndex(
+        scene.sceneDevice[
+          scene.sceneDevice.findIndex(
             (x) => x.deviceId === devices[index].id
           )
         ].state;
@@ -49,7 +64,7 @@ export class SceneService {
     await this.deviceRepository.save(devices);
 
     // Update client to change the state
-    updateSceneState.sceneDevice.forEach((x) => {
+    scene.sceneDevice.forEach((x) => {
       const data: DeviceToggle = {
         deviceId: x.deviceId,
         state: x.state,
@@ -58,7 +73,7 @@ export class SceneService {
       this.eventEmitter.emit(EVENT_DEVICE_UPDATE_STATE, data);
     });
 
-    return updateSceneState;
+    return { status: HttpStatus.OK, message: 'Success' };
   }
 
   async create(createSceneDto: CreateSceneDto) {

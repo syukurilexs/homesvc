@@ -12,12 +12,11 @@ import {
 import { SceneService } from './scene.service';
 import { CreateSceneDto } from './dto/create-scene.dto';
 import { UpdateSceneDto } from './dto/update-scene.dto';
-import { UpdateStateSceneDto } from './dto/update-state-scene.dto';
 
 @ApiTags('Scene')
 @Controller('scene')
 export class SceneController {
-  constructor(private readonly sceneService: SceneService) {}
+  constructor(private readonly sceneService: SceneService) { }
 
   @Post()
   create(@Body() createSceneDto: CreateSceneDto) {
@@ -45,10 +44,9 @@ export class SceneController {
   }
 
   @Put(':id/state')
-  updateState(
-    @Param('id') id: string,
-    @Body() updateSceneState: UpdateStateSceneDto
+  triggerScene(
+    @Param('id') id: number,
   ) {
-    return this.sceneService.updateState(id, updateSceneState);
+    return this.sceneService.triggerScene(id);
   }
 }
