@@ -38,8 +38,6 @@ export class SceneService {
     // Get a scene from database based on scene id
     const scene = await this.sceneRepository.findOne({ where: { id }, relations: { sceneDevice: true } });
 
-    console.log(scene)
-
     // Get device id
     const deviceIdList = scene.sceneDevice.map((x) => {
       return x.deviceId;
@@ -141,19 +139,19 @@ export class SceneService {
     await this.sceneRepository.save(scene);
 
     // Get scene device (intermediate table)
-    const output = await this.sceneDeviceRepository.find({
+    const sceneDevices = await this.sceneDeviceRepository.find({
       where: { sceneId: id },
     });
 
     // Change status if there is changes
     const updated: SceneDeviceOrm[] = [];
 
-    output.forEach((x) => {
+    sceneDevices.forEach((x) => {
       const idx = updateSceneDto.data.findIndex(
         (y) => y.device.id === x.deviceId
       );
 
-      if (idx > 0) {
+      if (idx > -1) {
         if (
           x.state !== (updateSceneDto.data[idx].status ? State.On : State.Off)
         ) {
@@ -168,7 +166,7 @@ export class SceneService {
     }
 
     // Find deleted device
-    const deleted = output.filter((x) => {
+    const deleted = sceneDevices.filter((x) => {
       return (
         updateSceneDto.data.findIndex((y) => y.device.id === x.deviceId) < 0
       );
@@ -178,7 +176,7 @@ export class SceneService {
 
     // Create new device
     const added = updateSceneDto.data.filter((x) => {
-      return output.findIndex((y) => y.deviceId === x.device.id) < 0;
+      return sceneDevices.findIndex((y) => y.deviceId === x.device.id) < 0;
     });
 
     const sceneDeviceCreated: SceneDeviceOrm[] = [];
@@ -186,7 +184,7 @@ export class SceneService {
     added.forEach((x) => {
       const sceneDevice = this.sceneDeviceRepository.create({
         deviceId: x.device.id,
-        sceneId: output[0].sceneId,
+        sceneId: sceneDevices[0].sceneId,
         state: x.status ? State.On : State.Off,
       });
 
