@@ -12,6 +12,7 @@ import {
 import { SceneService } from './scene.service';
 import { CreateSceneDto } from './dto/create-scene.dto';
 import { UpdateSceneDto } from './dto/update-scene.dto';
+import { DummyDto } from 'src/commons/dtos/dummy.dto';
 
 @ApiTags('Scene')
 @Controller('scene')
@@ -43,9 +44,10 @@ export class SceneController {
     return this.sceneService.remove(+id);
   }
 
-  @Put(':id/state')
+  @Put(':id/trigger')
   triggerScene(
     @Param('id') id: number,
+    @Body() dummy: DummyDto,
   ) {
     return this.sceneService.triggerScene(id);
   }
