@@ -1,0 +1,2 @@
+# This is sample paylod from switch
+{"action":"single","battery":100,"linkquality":152,"voltage":3000}
