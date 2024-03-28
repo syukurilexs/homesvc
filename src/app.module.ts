@@ -27,7 +27,6 @@ import { TaskModule } from './modules/task/task.module';
       entities: [__dirname + '/typeorm/*.entity{.ts,.js}'],
       synchronize: true,
     }),
-    //MqttModule.forRoot({ host: '192.168.0.12', port: 1883 }),
     MqttModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => {
