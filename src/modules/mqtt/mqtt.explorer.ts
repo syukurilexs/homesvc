@@ -5,7 +5,7 @@ import {
 import { Inject, OnModuleInit, Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { Client, Packet } from 'mqtt';
+import { MqttClient } from 'mqtt';
 
 @Injectable()
 export class MqttExplorer implements OnModuleInit {
@@ -15,7 +15,7 @@ export class MqttExplorer implements OnModuleInit {
     private readonly discoveryService: DiscoveryService,
     private readonly metadataScanner: MetadataScanner,
     private readonly reflector: Reflector,
-    @Inject(MQTT_CLIENT_INSTANCE) private readonly client: Client
+    @Inject(MQTT_CLIENT_INSTANCE) private readonly client: MqttClient
   ) {}
 
   onModuleInit() {

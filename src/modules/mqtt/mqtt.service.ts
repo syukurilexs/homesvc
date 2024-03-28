@@ -1,7 +1,7 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MQTT_CLIENT_INSTANCE } from '../../utils/constants';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Client } from 'mqtt';
+import { Client, MqttClient } from 'mqtt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { Repository } from 'typeorm';
@@ -12,7 +12,7 @@ export class MqttService {
   logger = new Logger(MqttService.name);
 
   constructor(
-    @Inject(MQTT_CLIENT_INSTANCE) private readonly mqttClient: Client,
+    @Inject(MQTT_CLIENT_INSTANCE) private readonly mqttClient: MqttClient,
     @InjectRepository(DeviceOrm) private deviceRepo: Repository<DeviceOrm>,
     private readonly eventEmitter: EventEmitter2
   ) {}

@@ -1,5 +1,5 @@
 import { Provider, Logger } from '@nestjs/common';
-import { connect, Packet, Client } from 'mqtt';
+import { connect, MqttClient } from 'mqtt';
 import {
   MQTT_CLIENT_INSTANCE,
   MQTT_LOGGER_PROVIDER,
@@ -11,7 +11,7 @@ export function createClientProvider(): Provider {
   return {
     provide: MQTT_CLIENT_INSTANCE,
     useFactory: (options: MqttModuleOptions, logger: Logger) => {
-      const client: Client = connect(options);
+      const client: MqttClient = connect(options);
 
       client.on('connect', () => {
         logger.log('MQTT connected');
@@ -27,9 +27,11 @@ export function createClientProvider(): Provider {
         logger.log('MQTT reconnecting');
       });
 
+      /*
       client.on('close', (error) => {
         logger.log('MQTT closed');
       });
+      */
 
       client.on('offline', () => {
         logger.log('MQTT offline');
