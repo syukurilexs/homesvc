@@ -108,6 +108,11 @@ export class SceneService {
         sceneDevice: {
           device: true,
         },
+        sceneAction: {
+          action: {
+            device: true
+          }
+        } 
       },
     });
   }
