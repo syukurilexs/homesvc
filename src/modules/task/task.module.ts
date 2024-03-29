@@ -6,6 +6,7 @@ import { TimerOrm } from 'src/typeorm/timer.entity';
 
 @Module({
   imports: [ScheduleModule.forRoot(), TypeOrmModule.forFeature([TimerOrm])],
+  exports: [TaskService],
   providers: [TaskService],
 })
-export class TaskModule {}
+export class TaskModule { }

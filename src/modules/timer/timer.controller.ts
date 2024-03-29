@@ -27,6 +27,11 @@ export class TimerController {
     return this.timerService.findAll();
   }
 
+  @Get('jobs')
+  getActiveJob() {
+    return this.timerService.getActiveJob();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.timerService.findOne(+id);

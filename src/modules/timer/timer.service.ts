@@ -11,8 +11,12 @@ import {
   EVENT_TASK_DELETE,
   EVENT_TASK_START,
   EVENT_TASK_STOP,
+  EVENT_TASK_UPDATE,
 } from 'src/utils/constants';
 import { Option } from 'src/utils/enums/option.enum';
+import { TaskService } from '../task/task.service';
+import { stringify } from 'querystring';
+import { JobEntity } from './entities/job.entity';
 
 @Injectable()
 export class TimerService {
@@ -20,8 +24,63 @@ export class TimerService {
     @InjectRepository(TimerOrm) private timerRepository: Repository<TimerOrm>,
     @InjectRepository(DeviceOrm)
     private deviceRepository: Repository<DeviceOrm>,
-    private readonly eventEmitter: EventEmitter2
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+    private readonly taskService: TaskService
+  ) { }
+
+  
+  /**
+   * Get all job from repository and attachs timer information
+   * @date 3/29/2024 - 11:49:14 AM
+   *
+   * @async
+   * @returns {unknown}
+   */
+  async getActiveJob() {
+    // Get all jobs
+    const jobs = this.taskService.getAllJob();
+
+    const newJobs: JobEntity[] = [];
+
+    // Formating the job and include timer information
+    for (let [key, value] of jobs) {
+
+      let last = 'Cannot get date', next = 'Cannot get date';
+
+      try {
+        next = value.nextDate().toJSDate().toString();
+      } catch (error) {
+        // use default value 
+      }
+
+      try {
+        last = value.lastDate().toString();
+      } catch (error) {
+        // use default value 
+      }
+
+      const timer = await this.timerRepository.findOne(
+        {
+          where: {
+            id: (() => Number(key.replace('cron_', '')))()
+          },
+          relations: {
+            device: true
+          }
+        })
+
+      newJobs.push({
+        name: key,
+        nextrun: next,
+        lastrun: last,
+        device: timer.device.name,
+        state: timer.state,
+        status: timer.option
+      })
+    };
+
+    return newJobs;
+  }
 
   /**
    * To create a timer and then run cronjob if task
@@ -83,7 +142,17 @@ export class TimerService {
     return this.timerRepository.findOneBy({ id });
   }
 
-  async update(id: number, updateTimerDto: UpdateTimerDto) {
+
+  /**
+   * Updating the time for the timer
+   * @date 3/29/2024 - 8:49:40 AM
+   *
+   * @async
+   * @param {number} id
+   * @param {UpdateTimerDto} updateTimerDto
+   * @returns {Promise<TimerOrm>}
+   */
+  async update(id: number, updateTimerDto: UpdateTimerDto): Promise<TimerOrm> {
     const timer = await this.timerRepository.findOne({
       where: {
         id,
@@ -102,7 +171,11 @@ export class TimerService {
       timer.time = updateTimerDto.time
     }
 
-    return this.timerRepository.save(timer);
+    const newtimer = await this.timerRepository.save(timer);
+
+    this.eventEmitter.emit(EVENT_TASK_UPDATE, id);
+
+    return newtimer;
   }
 
   async updateOption(id: number, updateTimerDto: UpdateTimerDto) {
