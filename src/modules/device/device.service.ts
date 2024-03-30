@@ -19,6 +19,7 @@ import {
 } from 'src/utils/constants';
 import { DeviceToggle } from 'src/utils/types/device-toggle.type';
 import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
+import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 
 @Injectable()
 export class DeviceService {
@@ -30,7 +31,9 @@ export class DeviceService {
     private readonly mqttService: MqttService,
     private eventEmitter: EventEmitter2,
     @InjectRepository(SelectedActionOrm)
-    private selectedActionRepository: Repository<SelectedActionOrm>
+    private selectedActionRepository: Repository<SelectedActionOrm>,
+    @InjectRepository(ActivityLogOrm)
+    private activityLogRepository: Repository<ActivityLogOrm>
   ) {}
 
   create(createDeviceDto: CreateDeviceDto) {
@@ -216,6 +219,11 @@ export class DeviceService {
     if (device.topic) {
       const state = device.state === State.Off ? '0' : '1';
       this.mqttService.publish(device.topic, state);
+
+      await this.activityLogRepository.save({
+        level: 'log',
+        message: `${device.name} ${device.state}`
+      });
     }
 
     const saved = await this.deviceRepository.save(device);

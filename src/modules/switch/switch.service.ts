@@ -13,6 +13,7 @@ import {
 import { DeviceToggle as DeviceState } from 'src/utils/types/device-toggle.type';
 import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
+import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 
 @Injectable()
 export class SwitchService {
@@ -20,6 +21,7 @@ export class SwitchService {
     @InjectRepository(DeviceOrm) private deviceRepo: Repository<DeviceOrm>,
     @InjectRepository(SelectedActionOrm) private selectedActionRepo: Repository<SelectedActionOrm>,
     @InjectRepository(SceneActionOrm) private sceneActionRepo: Repository<SceneActionOrm>,
+    @InjectRepository(ActivityLogOrm) private activityLogRepo: Repository<ActivityLogOrm>,
     private readonly mqttService: MqttService,
     private readonly event: EventEmitter2
   ) {
@@ -47,6 +49,11 @@ export class SwitchService {
     this.mqttService.onSwitch().subscribe((data) => {
       const topic = data.topic;
       const payload = JSON.parse(data.payload.toString());
+
+      this.activityLogRepo.save({
+        level: 'log',
+        message: `Receive mqtt topic "${data.topic}" with payload "${data.payload.toString()}"`
+      }).then(x => { })
 
       // Get all devices attached to the switch from selectedaction table
       // Find switch base on topic from mqtt by joining table selectedaction & action & device (switch)

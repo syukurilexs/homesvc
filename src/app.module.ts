@@ -13,6 +13,7 @@ import { WsGatewayModule } from './modules/ws-gateway/ws-gateway.module';
 import { SceneModule } from './modules/scene/scene.module';
 import { TimerModule } from './modules/timer/timer.module';
 import { TaskModule } from './modules/task/task.module';
+import { ActivitylogModule } from './modules/activitylog/activitylog.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { TaskModule } from './modules/task/task.module';
     SceneModule,
     TimerModule,
     TaskModule,
+    ActivitylogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
