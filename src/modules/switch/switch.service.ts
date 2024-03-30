@@ -55,19 +55,58 @@ export class SwitchService {
         message: `Receive mqtt topic "${data.topic}" with payload "${data.payload.toString()}"`
       }).then(x => { })
 
-      // Get all devices attached to the switch from selectedaction table
-      // Find switch base on topic from mqtt by joining table selectedaction & action & device (switch)
-      // Eg: zigbee2mqtt/SUIS01
-      this.selectedActionRepo
-        .find({
+
+      if (topic !== undefined && topic !== "" && payload.action !== undefined && payload.action !== "") {
+        // Get all devices attached to the switch from selectedaction table
+        // Find switch base on topic from mqtt by joining table selectedaction & action & device (switch)
+        // Eg: zigbee2mqtt/SUIS01
+        this.selectedActionRepo
+          .find({
+            where: {
+              action: {
+                device: {
+                  topic,
+                },
+                key: 'action',
+                value: payload.action
+              },
+            },
+            relations: {
+              action: {
+                device: {
+                  action: true,
+                },
+              },
+              device: true,
+            },
+          })
+          .then((selectedActions) => {
+            selectedActions.forEach(selectedAction => {
+              // Toggle the state
+              const state: DeviceState = {
+                deviceId: selectedAction.device.id,
+                state:
+                  selectedAction.device.state === State.Off
+                    ? State.On
+                    : State.Off,
+              };
+
+              // Emit toggled state to the device
+              this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
+            })
+          });
+
+        // Find scene from sceneaction, then get all device from found scene
+        // then trigger device base on state of device in the found scene
+        this.sceneActionRepo.find({
           where: {
             action: {
               device: {
-                topic,
+                topic
               },
               key: 'action',
               value: payload.action
-            },
+            }
           },
           relations: {
             action: {
@@ -75,62 +114,26 @@ export class SwitchService {
                 action: true,
               },
             },
-            device: true,
+            scene: {
+              sceneDevice: true
+            }
           },
-        })
-        .then((selectedActions) => {
-          selectedActions.forEach(selectedAction => {
-            // Toggle the state
-            const state: DeviceState = {
-              deviceId: selectedAction.device.id,
-              state:
-                selectedAction.device.state === State.Off
-                  ? State.On
-                  : State.Off,
-            };
+        }).then(sceneActions => {
+          // Listing all device within found scene
+          // Trigger device base on state of device in the scene
+          sceneActions.forEach(sceneAction => {
+            sceneAction.scene.sceneDevice.forEach(device => {
+              const state: DeviceState = {
+                deviceId: device.deviceId,
+                state: device.state
+              };
 
-            // Emit toggled state to the device
-            this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
-          })
-        });
-
-      // Find scene from sceneaction, then get all device from found scene
-      // then trigger device base on state of device in the found scene
-      this.sceneActionRepo.find({
-        where: {
-          action: {
-            device: {
-              topic
-            },
-            key: 'action',
-            value: payload.action
-          }
-        },
-        relations: {
-          action: {
-            device: {
-              action: true,
-            },
-          },
-          scene: {
-            sceneDevice: true
-          }
-        },
-      }).then(sceneActions => {
-        // Listing all device within found scene
-        // Trigger device base on state of device in the scene
-        sceneActions.forEach(sceneAction => {
-          sceneAction.scene.sceneDevice.forEach(device => {
-            const state: DeviceState = {
-              deviceId: device.deviceId,
-              state: device.state
-            };
-
-            // Emit toggled state to the device
-            this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
+              // Emit toggled state to the device
+              this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
+            })
           })
         })
-      })
+      }
     });
   }
 
