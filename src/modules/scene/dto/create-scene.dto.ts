@@ -2,12 +2,11 @@ import { CreateDeviceDto } from '../../device/dto/create-device.dto';
 
 export class CreateSceneDto {
   name: string;
-
-  data: SceneDataDto[];
+  devices: SceneDeviceDto[];
+	actions: number[];
 }
 
-export class SceneDataDto {
-  device: CreateDeviceDto;
-
-  status: boolean;
+export class SceneDeviceDto {
+  id: number;
+  state: boolean;
 }

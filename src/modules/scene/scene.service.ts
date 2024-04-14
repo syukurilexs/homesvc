@@ -75,16 +75,19 @@ export class SceneService {
   }
 
   async create(createSceneDto: CreateSceneDto) {
-    // Save scene
+    // Create scene, save scene and get saved entity
     const scene = this.sceneRepository.create({ name: createSceneDto.name });
     await this.sceneRepository.save(scene);
 
-    createSceneDto.data.forEach((data) => {
+    // Iterate the device of Create Scene Dto
+    createSceneDto.devices.forEach((deviceDto) => {
+
+      // Find the device by id from server
       this.deviceRepository
-        .findOneBy({ id: data.device.id })
+        .findOneBy({ id: deviceDto.id })
         .then((device) => {
           const sceneDevice = this.sceneDeviceRepository.create({
-            state: data.status ? State.On : State.Off,
+            state: deviceDto.state ? State.On : State.Off,
             device,
             scene,
           });
@@ -100,6 +103,29 @@ export class SceneService {
           console.log('error find: ', error);
         });
     });
+
+    // Iterate the action from DTO
+    createSceneDto.actions.forEach(x => {
+
+      // Find action from server base on id from DTO
+      this.actionRepository
+        .findOneBy({ id: x })
+        .then(action => {
+
+          // create sceneAction and save to the server
+          const sceneAction = this.sceneActionRepository.create({
+            action: action,
+            scene: scene
+          })
+
+          this.sceneActionRepository.save(sceneAction)
+            .then()
+            .catch((error) => {
+              console.log('error saved: ', error);
+            });
+        })
+
+    })
   }
 
   findAll() {
@@ -112,7 +138,7 @@ export class SceneService {
           action: {
             device: true
           }
-        } 
+        }
       },
     });
   }
@@ -152,13 +178,13 @@ export class SceneService {
     const updated: SceneDeviceOrm[] = [];
 
     sceneDevices.forEach((x) => {
-      const idx = updateSceneDto.data.findIndex(
-        (y) => y.device.id === x.deviceId
+      const idx = updateSceneDto.devices.findIndex(
+        (y) => y.id === x.deviceId
       );
 
       if (idx > -1) {
         if (
-          x.state !== (updateSceneDto.data[idx].status ? State.On : State.Off)
+          x.state !== (updateSceneDto.devices[idx].state ? State.On : State.Off)
         ) {
           x.state = x.state === State.Off ? State.On : State.Off;
           updated.push(x);
@@ -173,33 +199,40 @@ export class SceneService {
     // Find deleted device
     const deleted = sceneDevices.filter((x) => {
       return (
-        updateSceneDto.data.findIndex((y) => y.device.id === x.deviceId) < 0
+        updateSceneDto.devices.findIndex((y) => y.id === x.deviceId) < 0
       );
     });
 
     await this.sceneDeviceRepository.remove(deleted);
 
     // Create new device
-    const added = updateSceneDto.data.filter((x) => {
-      return sceneDevices.findIndex((y) => y.deviceId === x.device.id) < 0;
+    const added = updateSceneDto.devices.filter((x) => {
+      return sceneDevices.findIndex((y) => y.deviceId === x.id) < 0;
     });
 
     const sceneDeviceCreated: SceneDeviceOrm[] = [];
 
     added.forEach((x) => {
       const sceneDevice = this.sceneDeviceRepository.create({
-        deviceId: x.device.id,
+        deviceId: x.id,
         sceneId: sceneDevices[0].sceneId,
-        state: x.status ? State.On : State.Off,
+        state: x.state ? State.On : State.Off,
       });
 
       sceneDeviceCreated.push(sceneDevice);
     });
 
-    const actions = await this.actionRepository.find({
-      where: { id: In(updateSceneDto.actions) },
-      relations: { device: true }
-    });
+
+    // Default action to empty array to avoid find repository error
+    // when find with empty array
+    let actions: ActionOrm[] = [];
+
+    if (updateSceneDto.actions.length > 0) {
+      actions = await this.actionRepository.find({
+        where: { id: In(updateSceneDto.actions) },
+        relations: { device: true }
+      });
+    }
 
     const updatedScene = this.sceneDeviceRepository.save(sceneDeviceCreated);
 
@@ -213,7 +246,7 @@ export class SceneService {
     } else {
       /**
        * This section need to be update
-       * current implementation is not optimise
+       * current implementation is not optimize
        * and just quick solution
        */
       // Clear previous selected action
