@@ -1,7 +1,7 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MQTT_CLIENT_INSTANCE } from '../../utils/constants';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Client, MqttClient } from 'mqtt';
+import { MqttClient } from 'mqtt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { Repository } from 'typeorm';
@@ -50,5 +50,34 @@ export class MqttService {
     );
 
     return switch$;
+  }
+
+  
+  /**
+   * An Observable to receive data from mqtt specifically
+   * for contact sensor 
+   * @date 3/31/2024 - 8:25:19 AM
+   *
+   * @returns {*}
+   */
+  onContactSensor() {
+    const contactSensor = new Observable<{ topic: string; payload: string }>(
+      (subscribe) => {
+        this.mqttClient.on('message', (topic: string, payload: Buffer) => {
+          /**
+           * Sending to contact sensor if prefix suis (ignore case)
+           */
+          const regex = new RegExp(/contact/, 'i');
+          if (regex.test(topic)) {
+            subscribe.next({
+              topic,
+              payload: payload.toString(),
+            });
+          }
+        });
+      }
+    );
+
+    return contactSensor;
   }
 }

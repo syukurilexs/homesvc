@@ -13,7 +13,7 @@ import {
   EVENT_TASK_STOP,
   EVENT_TASK_UPDATE,
 } from 'src/utils/constants';
-import { Option } from 'src/utils/enums/option.enum';
+import { Option } from 'src/commons/enums/option.enum';
 import { TaskService } from '../task/task.service';
 import { stringify } from 'querystring';
 import { JobEntity } from './entities/job.entity';

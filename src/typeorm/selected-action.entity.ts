@@ -10,18 +10,11 @@ import {
 } from 'typeorm';
 import { ActionOrm } from './action.entity';
 import { DeviceOrm } from './device.entity';
+import { AbstractEntity } from 'src/commons/entities/abscract.entity';
 
 @Entity()
-export class SelectedActionOrm {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @CreateDateColumn()
-  createdAt: string;
-
-  @UpdateDateColumn()
-  updatedAt: string;
-
+export class SelectedActionOrm extends AbstractEntity {
+  
   @ManyToOne(() => ActionOrm, { onDelete: 'CASCADE' })
   @JoinTable()
   action: ActionOrm;

@@ -8,20 +8,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { DeviceOrm } from './device.entity';
+import { AbstractEntity } from 'src/commons/entities/abscract.entity';
 
 @Entity()
-export class GroupOrm {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class GroupOrm extends AbstractEntity {
   @Column()
   name: string;
-
-  @CreateDateColumn()
-  createdAt: string;
-
-  @UpdateDateColumn()
-  updatedAt: string;
 
   @ManyToMany(() => DeviceOrm)
   @JoinTable()

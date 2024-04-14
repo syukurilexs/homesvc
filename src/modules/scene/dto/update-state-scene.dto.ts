@@ -1,4 +1,4 @@
-import { State } from 'src/utils/enums/state.enum';
+import { State } from 'src/commons/enums/state.enum';
 
 export class UpdateStateSceneDto {
   id: number;

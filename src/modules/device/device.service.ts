@@ -1,25 +1,33 @@
 import { ActionOrm } from '../../typeorm/action.entity';
 import { CreateSwitchDto } from './dto/create-switch.dto';
 import { MqttService } from '../mqtt/mqtt.service';
-import { Injectable } from '@nestjs/common';
+import { HttpCode, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
-import { DeviceType } from 'src/utils/enums/device-type.enum';
+import { DeviceType } from 'src/commons/enums/device-type.enum';
 import { Repository, In } from 'typeorm';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateStateDto } from './dto/state.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { UpdateSwitchDto } from './dto/update-switch.dto';
-import { State } from 'src/utils/enums/state.enum';
+import { State } from 'src/commons/enums/state.enum';
 import {
+  EVENT_CONTACT_RELOAD,
   EVENT_DEVICE_UPDATE_STATE,
   EVENT_SWITCH_RELOAD,
   WS_DEVICE,
 } from 'src/utils/constants';
-import { DeviceToggle } from 'src/utils/types/device-toggle.type';
+import { DeviceToggle } from 'src/commons/types/device-toggle.type';
 import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
+import { CreateContactDto } from './dto/create-contact-sensor.dto';
+import { ContactSensorOrm } from 'src/typeorm/contact-sensor.entity';
+import { ContactEntity } from './entities/contact.entity';
+import { SuisEntity } from './entities/suis.entity';
+import { UpdateContactDto } from './dto/update-contact.dto';
+import { LightEntity } from './entities/light.entity';
+import { ActionEntity } from './entities/action.entity';
 
 @Injectable()
 export class DeviceService {
@@ -33,16 +41,48 @@ export class DeviceService {
     @InjectRepository(SelectedActionOrm)
     private selectedActionRepository: Repository<SelectedActionOrm>,
     @InjectRepository(ActivityLogOrm)
-    private activityLogRepository: Repository<ActivityLogOrm>
-  ) {}
+    private activityLogRepository: Repository<ActivityLogOrm>,
+    @InjectRepository(ContactSensorOrm)
+    private contactSensorRepository: Repository<ContactSensorOrm>
+  ) { }
 
-  create(createDeviceDto: CreateDeviceDto) {
-    return this.deviceRepository.save({
+
+  /**
+   * Creating device (Light & Fan)
+   * @date 4/9/2024 - 10:43:50 AM
+   *
+   * @async
+   * @param {CreateDeviceDto} createDeviceDto
+   * @returns {unknown}
+   */
+  async create(createDeviceDto: CreateDeviceDto) {
+    const deviceEntity = this.deviceRepository.create({
       name: createDeviceDto.name,
       type: createDeviceDto.type,
       topic: createDeviceDto.topic,
       remark: createDeviceDto.remark,
     });
+
+    // Get action from Action Table based on selected action from input DTO
+    const foundAction = await this.actionRepository.find({
+      where: { id: In(createDeviceDto.actions) }
+    });
+
+    // Save device to server and get return saved device with id
+    const savedDevice = await this.deviceRepository.save(deviceEntity);
+
+    // Maps device and action to intermediate table (SelectedAction Table)
+    foundAction.forEach(async action => {
+      // Create selected device and maps saved device with found action
+      const selectedActionEntity = new SelectedActionOrm();
+      selectedActionEntity.device = savedDevice;
+      selectedActionEntity.action = action;
+
+      // Insert selected action into intermediate table
+      await this.selectedActionRepository.save(selectedActionEntity);
+    })
+
+    return savedDevice;
   }
 
   async createSwitch(createSwitchDto: CreateSwitchDto) {
@@ -71,6 +111,40 @@ export class DeviceService {
     return suisOutput;
   }
 
+
+  /**
+   * Create Contact Sensor
+   * @date 3/31/2024 - 5:50:50 PM
+   *
+   * @async
+   * @param {CreateContactDto} createContactSensorDto
+   * @returns {unknown}
+   */
+  async createContactSensor(createContactSensorDto: CreateContactDto) {
+    // Create device
+    const device = this.deviceRepository.create({
+      name: createContactSensorDto.name,
+      type: DeviceType.Contact,
+      topic: createContactSensorDto.topic,
+      remark: createContactSensorDto.remark,
+    })
+
+    // Create contact sensor with default value define in entity
+    const contact = this.contactSensorRepository.create({});
+
+    // Create relationship 
+    contact.device = device;
+    contact.key = createContactSensorDto.key;
+
+    // Save entity and cascade
+    const saveContact = await this.contactSensorRepository.save(contact);
+
+    // Reload contact to subscribe to mqtt to include recently added contact
+    this.eventEmitter.emit(EVENT_CONTACT_RELOAD)
+
+    return saveContact;
+  }
+
   findAll(type: DeviceType) {
     if (type !== undefined) {
       return this.deviceRepository.find({
@@ -88,8 +162,8 @@ export class DeviceService {
     });
   }
 
-  findOne(id: number) {
-    return this.deviceRepository.findOne({
+  async findOne(id: number) {
+    const output = await this.deviceRepository.findOne({
       where: { id },
       relations: {
         action: true,
@@ -98,8 +172,54 @@ export class DeviceService {
             device: true,
           },
         },
+        contactSensor: true
       },
     });
+
+    if (output === null) {
+      throw new HttpException(`Contact sensor with id ${id} is not found`, HttpStatus.NOT_FOUND);
+    }
+
+    if (output.type === DeviceType.Contact) {
+      return new ContactEntity({
+        name: output.name,
+        remark: output.remark,
+        topic: output.topic,
+        type: output.type,
+        key: output.contactSensor.key
+      });
+    } else if (output.type === DeviceType.Switch) {
+      return new SuisEntity({
+        name: output.name,
+        remark: output.remark,
+        topic: output.topic,
+        type: output.type,
+        action: output.action.map(x => {
+          return {
+            key: x.key,
+            value: x.value,
+            id: x.id
+          }
+        })
+      })
+    } else if (output.type === DeviceType.Light || output.type === DeviceType.Fan) {
+      return new LightEntity({
+        name: output.name,
+        remark: output.remark,
+        topic: output.topic,
+        type: output.type,
+        selectedAction: output.selectedAction.map(x => {
+          return {
+            id: x.action.id,
+            key: x.action.key,
+            value: x.action.value,
+            name: x.action.device.name 
+          }
+        })
+      })
+    }
+
+    return output;
   }
 
   async update(id: number, updateDeviceDto: UpdateDeviceDto) {
@@ -155,6 +275,53 @@ export class DeviceService {
     }
 
     return updatedDevice;
+  }
+
+
+  /**
+   * Use to update device table and also contact table
+   * @date 4/8/2024 - 11:59:47 AM
+   *
+   * @async
+   * @param {number} id Id of device
+   * @param {UpdateDeviceDto} updateDeviceDto DTO object to update the value
+   * @returns {unknown} Return saved device only
+   */
+  async updateContact(id: number, updateDeviceDto: UpdateContactDto) {
+
+    // Get contact base on id
+    const device = await this.deviceRepository.findOne({
+      where: {
+        id
+      },
+      relations: {
+        contactSensor: true
+      }
+    });
+
+    // If contact is not found, throw with status 404 (not found)
+    if (device === null) {
+      // To Do
+      throw new HttpException(`Contact with id ${id} is not found`, HttpStatus.NOT_FOUND)
+    }
+
+    // Update entity with new data from DTO
+    device.name = updateDeviceDto.name;
+    device.topic = updateDeviceDto.topic;
+    device.remark = updateDeviceDto.remark;
+
+    // Update contact table for key column
+    if (device.contactSensor) {
+      device.contactSensor.key = updateDeviceDto.key;
+    }
+
+    // Save to database (cascade)
+    const savedContact = this.deviceRepository.save(device);
+
+    // Reload contact to subscribe to mqtt for recent updated contact
+    this.eventEmitter.emit(EVENT_CONTACT_RELOAD)
+
+    return savedContact;
   }
 
   async updateSwitch(id: number, updateSwitchDto: UpdateSwitchDto) {
@@ -234,8 +401,21 @@ export class DeviceService {
     return saved;
   }
 
-  findAllAction() {
-    return this.actionRepository.find();
+  async findAllAction() {
+    const action = await this.actionRepository.find({
+      relations: {
+        device: true
+      }
+    });
+
+    return action.map(x => {
+      return new ActionEntity({
+        id: x.id,
+        key: x.key,
+        value: x.value,
+        name: x.device.name
+      })
+    })
   }
 
   @OnEvent(EVENT_DEVICE_UPDATE_STATE)

@@ -1,13 +1,10 @@
-import { State } from 'src/utils/enums/state.enum';
+import { State } from 'src/commons/enums/state.enum';
 import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinTable,
-  ManyToMany,
   ManyToOne,
   PrimaryColumn,
-  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { DeviceOrm } from './device.entity';

@@ -1,23 +1,23 @@
 import { ActionOrm } from './action.entity';
-import { DeviceType } from 'src/utils/enums/device-type.enum';
-import { State } from 'src/utils/enums/state.enum';
+import { DeviceType } from 'src/commons/enums/device-type.enum';
+import { State } from 'src/commons/enums/state.enum';
 import {
   Column,
   CreateDateColumn,
   Entity,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { SceneDeviceOrm } from './scene-device.entity';
 import { TimerOrm } from './timer.entity';
 import { SelectedActionOrm } from './selected-action.entity';
+import { ContactSensorOrm } from './contact-sensor.entity';
+import { AbstractEntity } from 'src/commons/entities/abscract.entity';
 
 @Entity()
-export class DeviceOrm {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class DeviceOrm extends AbstractEntity {
   @Column()
   name: string;
 
@@ -60,12 +60,11 @@ export class DeviceOrm {
   )
   selectedAction: SelectedActionOrm[];
 
+  @OneToOne(() => ContactSensorOrm, (contactSensor) => contactSensor.device, {
+    cascade: ['insert', 'update']
+  })
+  contactSensor: ContactSensorOrm
+
   @Column({ default: '' })
   remark: string;
-
-  @CreateDateColumn()
-  createdAt: string;
-
-  @UpdateDateColumn()
-  updatedAt: string;
 }

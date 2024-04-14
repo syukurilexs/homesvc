@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { hostname } from 'os';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DeviceModule } from './modules/device/device.module';
@@ -14,6 +13,7 @@ import { SceneModule } from './modules/scene/scene.module';
 import { TimerModule } from './modules/timer/timer.module';
 import { TaskModule } from './modules/task/task.module';
 import { ActivitylogModule } from './modules/activitylog/activitylog.module';
+import { ContactSensorModule } from './modules/contact-sensor/contact-sensor.module';
 
 @Module({
   imports: [
@@ -25,7 +25,7 @@ import { ActivitylogModule } from './modules/activitylog/activitylog.module';
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'data/syukurilexsDB',
-      entities: [__dirname + '/typeorm/*.entity{.ts,.js}'],
+      entities: [__dirname + '/typeorm/*.entity{.ts,.js}', __dirname + '/commons/entities/*.entity{.ts,.js}'],
       synchronize: true,
     }),
     MqttModule.forRootAsync({
@@ -46,8 +46,9 @@ import { ActivitylogModule } from './modules/activitylog/activitylog.module';
     TimerModule,
     TaskModule,
     ActivitylogModule,
+    ContactSensorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

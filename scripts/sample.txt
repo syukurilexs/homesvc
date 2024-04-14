@@ -1,2 +1,5 @@
 # This is sample paylod from switch
 {"action":"single","battery":100,"linkquality":152,"voltage":3000}
+
+# This is payload from Contact Sensor
+{"battery_low":false,"contact":true,"linkquality":176,"tamper":false}

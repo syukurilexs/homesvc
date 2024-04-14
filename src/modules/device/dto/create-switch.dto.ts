@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DeviceType } from 'src/utils/enums/device-type.enum';
+import { DeviceType } from 'src/commons/enums/device-type.enum';
 import { ArrayNotEmpty } from 'class-validator';
 
 export class CreateSwitchDto {

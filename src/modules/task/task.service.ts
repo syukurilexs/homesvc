@@ -12,8 +12,8 @@ import {
   EVENT_DEVICE_UPDATE_STATE,
   EVENT_TASK_UPDATE,
 } from 'src/utils/constants';
-import { Option } from 'src/utils/enums/option.enum';
-import { DeviceToggle } from 'src/utils/types/device-toggle.type';
+import { Option } from 'src/commons/enums/option.enum';
+import { DeviceToggle } from 'src/commons/types/device-toggle.type';
 import { Repository } from 'typeorm';
 
 @Injectable()

@@ -52,7 +52,6 @@ export class MqttExplorer implements OnModuleInit {
   }
 
   onMessage() {
-    console.log('call message')
     this.client.on(
       'message',
       (topic: string, payload: Buffer) => {

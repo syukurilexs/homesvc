@@ -10,6 +10,7 @@ export const EVENT_TASK_ADD = 'task.add';
 export const EVENT_TASK_START = 'task.start';
 export const EVENT_TASK_STOP = 'task.stop';
 export const EVENT_SWITCH_RELOAD = 'switch.reload';
+export const EVENT_CONTACT_RELOAD = 'contact.reload';
 export const EVENT_TASK_UPDATE = 'task.update';
 
 // Event Emitter for Device Module

@@ -23,7 +23,6 @@ export class ActivitylogService {
    * @returns {unknown}
    */
   async findByPage(pageOptionsDto: PageOptionsDto) {
-    console.log(pageOptionsDto.skip)
     const entities = await this.activityLogRepository.find({
       skip: pageOptionsDto.skip,
       take: pageOptionsDto.take,

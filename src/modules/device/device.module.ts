@@ -6,10 +6,17 @@ import { DeviceController } from './device.controller';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
+import { ContactSensorOrm } from 'src/typeorm/contact-sensor.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DeviceOrm, ActionOrm, SelectedActionOrm, ActivityLogOrm]),
+    TypeOrmModule.forFeature([
+      DeviceOrm,
+      ActionOrm,
+      SelectedActionOrm,
+      ActivityLogOrm,
+      ContactSensorOrm
+    ]),
   ],
   controllers: [DeviceController],
   providers: [DeviceService],

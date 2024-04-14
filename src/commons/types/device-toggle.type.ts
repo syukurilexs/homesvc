@@ -1,4 +1,4 @@
-import { State } from '../enums/state.enum'
+import { State } from '../../commons/enums/state.enum'
 
 export type DeviceToggle  = {
 	deviceId: number,

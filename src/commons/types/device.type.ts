@@ -1,4 +1,4 @@
-import { DeviceType } from '../enums/device-type.enum';
+import { DeviceType } from '../../commons/enums/device-type.enum';
 
 export type Device = {
   id: number;

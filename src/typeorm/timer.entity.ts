@@ -1,13 +1,11 @@
+import { AbstractEntity } from 'src/commons/entities/abscract.entity';
 import { DeviceOrm } from './device.entity';
-import { Option } from 'src/utils/enums/option.enum';
-import { State } from 'src/utils/enums/state.enum';
+import { Option } from 'src/commons/enums/option.enum';
+import { State } from 'src/commons/enums/state.enum';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-export class TimerOrm {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class TimerOrm extends AbstractEntity {
   @Column({
     type: 'simple-enum',
     enum: State,

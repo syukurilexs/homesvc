@@ -2,15 +2,15 @@ import { MqttService } from '../mqtt/mqtt.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
-import { DeviceType } from 'src/utils/enums/device-type.enum';
+import { DeviceType } from 'src/commons/enums/device-type.enum';
 import { Repository } from 'typeorm';
-import { State } from 'src/utils/enums/state.enum';
+import { State } from 'src/commons/enums/state.enum';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import {
   EVENT_DEVICE_UPDATE_STATE,
   EVENT_SWITCH_RELOAD,
 } from 'src/utils/constants';
-import { DeviceToggle as DeviceState } from 'src/utils/types/device-toggle.type';
+import { DeviceToggle as DeviceState } from 'src/commons/types/device-toggle.type';
 import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';

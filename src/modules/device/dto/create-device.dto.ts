@@ -1,6 +1,6 @@
 import { Optional } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { DeviceType } from 'src/utils/enums/device-type.enum';
+import { DeviceType } from 'src/commons/enums/device-type.enum';
 
 export class CreateDeviceDto {
   @Optional()
@@ -14,4 +14,6 @@ export class CreateDeviceDto {
   topic: string;
 
   remark: string;
+ 
+	actions: number[];
 }

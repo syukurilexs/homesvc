@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { WsGatewayService } from './ws-gateway.service';
 import { Socket, Server } from 'socket.io';
-import { Device } from 'src/utils/types/device.type';
+import { Device } from 'src/commons/types/device.type';
 import { WS_DEVICE } from 'src/utils/constants';
 
 @WebSocketGateway({

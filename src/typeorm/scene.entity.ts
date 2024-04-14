@@ -8,20 +8,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { SceneActionOrm } from './scene-action.entity';
+import { AbstractEntity } from 'src/commons/entities/abscract.entity';
 
 @Entity()
-export class SceneOrm {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class SceneOrm extends AbstractEntity {
   @Column()
   name: string;
-
-  @CreateDateColumn()
-  createdAt: string;
-
-  @UpdateDateColumn()
-  updatedAt: string;
 
   @OneToMany((type) => SceneDeviceOrm, (sceneDevice) => sceneDevice.scene)
   sceneDevice: SceneDeviceOrm[];

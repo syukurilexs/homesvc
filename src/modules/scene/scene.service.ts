@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { SceneDeviceOrm } from 'src/typeorm/scene-device.entity';
 import { SceneOrm } from 'src/typeorm/scene.entity';
-import { State } from 'src/utils/enums/state.enum';
+import { State } from 'src/commons/enums/state.enum';
 import { In, Repository } from 'typeorm';
 import { CreateSceneDto } from './dto/create-scene.dto';
 import { UpdateSceneDto } from './dto/update-scene.dto';
 import { UpdateStateSceneDto } from './dto/update-state-scene.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_DEVICE_UPDATE_STATE } from 'src/utils/constants';
-import { DeviceToggle } from 'src/utils/types/device-toggle.type';
+import { DeviceToggle } from 'src/commons/types/device-toggle.type';
 import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
 import { ActionOrm } from 'src/typeorm/action.entity';
 

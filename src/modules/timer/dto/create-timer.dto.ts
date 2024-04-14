@@ -1,5 +1,5 @@
-import { Option } from 'src/utils/enums/option.enum';
-import { State } from 'src/utils/enums/state.enum';
+import { Option } from 'src/commons/enums/option.enum';
+import { State } from 'src/commons/enums/state.enum';
 
 export class CreateTimerDto {
   deviceId: number;
