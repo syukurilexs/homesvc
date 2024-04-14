@@ -1,19 +1,22 @@
 import {
-  Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
   ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  PrimaryColumn,
 } from 'typeorm';
 import { ActionOrm } from './action.entity';
 import { SceneOrm } from './scene.entity';
-import { AbstractEntity } from 'src/commons/entities/abscract.entity';
+import { AbstractDateEntity } from 'src/commons/entities/abscract.entity';
 
 @Entity()
-export class SceneActionOrm extends AbstractEntity {
+export class SceneActionOrm extends AbstractDateEntity {
+  @PrimaryColumn()
+  sceneId: number;
+
+  @PrimaryColumn()
+  actionId: number;
+
   @ManyToOne(() => ActionOrm, { onDelete: 'CASCADE' })
   @JoinTable()
   action: ActionOrm;

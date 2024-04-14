@@ -1,0 +1,11 @@
+=== Issue getter doesn't work in nested object
+- solution to solve this is using dummy function and return value using object
+- eg:
+
+    @Expose()
+    @Transform(({obj}) => (obj as SceneAction).action.value)
+    value() {}
+
+=== Issue un-initialize nested object
+- Solution to solve this issue is re-arrange the class
+- sub class must declare on top of parent class
