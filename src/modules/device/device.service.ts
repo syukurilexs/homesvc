@@ -182,6 +182,7 @@ export class DeviceService {
 
     if (output.type === DeviceType.Contact) {
       return new ContactEntity({
+        id: output.id,
         name: output.name,
         remark: output.remark,
         topic: output.topic,
@@ -190,6 +191,7 @@ export class DeviceService {
       });
     } else if (output.type === DeviceType.Switch) {
       return new SuisEntity({
+        id: output.id,
         name: output.name,
         remark: output.remark,
         topic: output.topic,
@@ -204,6 +206,7 @@ export class DeviceService {
       })
     } else if (output.type === DeviceType.Light || output.type === DeviceType.Fan) {
       return new LightEntity({
+        id: output.id,
         name: output.name,
         remark: output.remark,
         topic: output.topic,
