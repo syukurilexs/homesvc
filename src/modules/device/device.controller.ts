@@ -12,7 +12,13 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
-import { ApiBody, ApiExtraModels, ApiQuery, ApiTags, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiExtraModels,
+  ApiQuery,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { DeviceService } from './device.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
@@ -24,7 +30,7 @@ import { UpdateContactDto } from './dto/update-contact.dto';
 @ApiTags('Device')
 @Controller('device')
 export class DeviceController {
-  constructor(private readonly deviceService: DeviceService) { }
+  constructor(private readonly deviceService: DeviceService) {}
 
   @Post()
   create(@Body() createDeviceDto: CreateDeviceDto) {
@@ -41,6 +47,7 @@ export class DeviceController {
     return this.deviceService.createContactSensor(createContactSensorDto);
   }
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @ApiQuery({
     name: 'type',
     enum: DeviceType,
@@ -50,25 +57,7 @@ export class DeviceController {
   findAll(@Query('type') type: string) {
     let deviceType: DeviceType;
 
-    switch (type) {
-      case 'Light':
-        deviceType = DeviceType.Light;
-        break;
-      case 'Fan':
-        deviceType = DeviceType.Fan;
-        break;
-      case 'Switch':
-        deviceType = DeviceType.Switch;
-        break;
-      case 'Contact':
-        deviceType = DeviceType.Contact;
-        break;
-      default:
-        deviceType = undefined;
-        break;
-    }
-
-    return this.deviceService.findAll(deviceType);
+    return this.deviceService.findAll(type as DeviceType);
   }
 
   @UseInterceptors(ClassSerializerInterceptor)
@@ -89,22 +78,31 @@ export class DeviceController {
     schema: {
       oneOf: [
         { $ref: getSchemaPath(UpdateContactDto) },
-        { $ref: getSchemaPath(UpdateDeviceDto) }
-      ]
-    }
+        { $ref: getSchemaPath(UpdateDeviceDto) },
+      ],
+    },
   })
-  update(@Param('id') id: string, @Body() updateDeviceDto: UpdateContactDto | UpdateDeviceDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateDeviceDto: UpdateContactDto | UpdateDeviceDto,
+  ) {
     // Check type and update according to type
     // Some type not worth to share common module when the diffrential is too much
     if (updateDeviceDto.type === DeviceType.Contact) {
-      return this.deviceService.updateContact(+id, updateDeviceDto as UpdateContactDto);
+      return this.deviceService.updateContact(
+        +id,
+        updateDeviceDto as UpdateContactDto,
+      );
     } else {
       return this.deviceService.update(+id, updateDeviceDto);
     }
   }
 
   @Patch('switch/:id')
-  updateSwitch(@Param('id') id: string, @Body() updateSwitchDto: UpdateSwitchDto) {
+  updateSwitch(
+    @Param('id') id: string,
+    @Body() updateSwitchDto: UpdateSwitchDto,
+  ) {
     return this.deviceService.updateSwitch(+id, updateSwitchDto);
   }
 

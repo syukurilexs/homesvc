@@ -17,14 +17,17 @@ import { ActionOrm } from 'src/typeorm/action.entity';
 @Injectable()
 export class SceneService {
   constructor(
-    @InjectRepository(ActionOrm) private actionRepository: Repository<ActionOrm>,
-    @InjectRepository(SceneActionOrm) private sceneActionRepository: Repository<SceneActionOrm>,
+    @InjectRepository(ActionOrm)
+    private actionRepository: Repository<ActionOrm>,
+    @InjectRepository(SceneActionOrm)
+    private sceneActionRepository: Repository<SceneActionOrm>,
     @InjectRepository(SceneOrm) private sceneRepository: Repository<SceneOrm>,
-    @InjectRepository(DeviceOrm) private deviceRepository: Repository<DeviceOrm>,
-    @InjectRepository(SceneDeviceOrm) private sceneDeviceRepository: Repository<SceneDeviceOrm>,
-    private readonly eventEmitter: EventEmitter2
-  ) { }
-
+    @InjectRepository(DeviceOrm)
+    private deviceRepository: Repository<DeviceOrm>,
+    @InjectRepository(SceneDeviceOrm)
+    private sceneDeviceRepository: Repository<SceneDeviceOrm>,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   /**
    * The function to trigger and activate all the light / fan from scene
@@ -36,7 +39,10 @@ export class SceneService {
    */
   async triggerScene(id: number) {
     // Get a scene from database based on scene id
-    const scene = await this.sceneRepository.findOne({ where: { id }, relations: { sceneDevice: true } });
+    const scene = await this.sceneRepository.findOne({
+      where: { id },
+      relations: { sceneDevice: true },
+    });
 
     // Get device id
     const deviceIdList = scene.sceneDevice.map((x) => {
@@ -53,9 +59,7 @@ export class SceneService {
     for (let index = 0; index < devices.length; index++) {
       devices[index].state =
         scene.sceneDevice[
-          scene.sceneDevice.findIndex(
-            (x) => x.deviceId === devices[index].id
-          )
+          scene.sceneDevice.findIndex((x) => x.deviceId === devices[index].id)
         ].state;
     }
 
@@ -81,7 +85,6 @@ export class SceneService {
 
     // Iterate the device of Create Scene Dto
     createSceneDto.devices.forEach((deviceDto) => {
-
       // Find the device by id from server
       this.deviceRepository
         .findOneBy({ id: deviceDto.id })
@@ -105,27 +108,23 @@ export class SceneService {
     });
 
     // Iterate the action from DTO
-    createSceneDto.actions.forEach(x => {
-
+    createSceneDto.actions.forEach((x) => {
       // Find action from server base on id from DTO
-      this.actionRepository
-        .findOneBy({ id: x })
-        .then(action => {
+      this.actionRepository.findOneBy({ id: x }).then((action) => {
+        // create sceneAction and save to the server
+        const sceneAction = this.sceneActionRepository.create({
+          action: action,
+          scene: scene,
+        });
 
-          // create sceneAction and save to the server
-          const sceneAction = this.sceneActionRepository.create({
-            action: action,
-            scene: scene
-          })
-
-          this.sceneActionRepository.save(sceneAction)
-            .then()
-            .catch((error) => {
-              console.log('error saved: ', error);
-            });
-        })
-
-    })
+        this.sceneActionRepository
+          .save(sceneAction)
+          .then()
+          .catch((error) => {
+            console.log('error saved: ', error);
+          });
+      });
+    });
   }
 
   findAll() {
@@ -136,9 +135,9 @@ export class SceneService {
         },
         sceneAction: {
           action: {
-            device: true
-          }
-        }
+            device: true,
+          },
+        },
       },
     });
   }
@@ -153,7 +152,7 @@ export class SceneService {
         sceneAction: {
           action: {
             device: true,
-          }
+          },
         },
       },
     });
@@ -163,8 +162,8 @@ export class SceneService {
     // Get scene
     const scene = await this.sceneRepository.findOne({
       where: { id },
-      relations: { sceneAction: true }
-    })
+      relations: { sceneAction: true },
+    });
 
     scene.name = updateSceneDto.name;
     await this.sceneRepository.save(scene);
@@ -178,9 +177,7 @@ export class SceneService {
     const updated: SceneDeviceOrm[] = [];
 
     sceneDevices.forEach((x) => {
-      const idx = updateSceneDto.devices.findIndex(
-        (y) => y.id === x.deviceId
-      );
+      const idx = updateSceneDto.devices.findIndex((y) => y.id === x.deviceId);
 
       if (idx > -1) {
         if (
@@ -193,14 +190,12 @@ export class SceneService {
     });
 
     if (updated.length > 0) {
-      this.sceneDeviceRepository.save(updated);
+      await this.sceneDeviceRepository.save(updated);
     }
 
     // Find deleted device
     const deleted = sceneDevices.filter((x) => {
-      return (
-        updateSceneDto.devices.findIndex((y) => y.id === x.deviceId) < 0
-      );
+      return updateSceneDto.devices.findIndex((y) => y.id === x.deviceId) < 0;
     });
 
     await this.sceneDeviceRepository.remove(deleted);
@@ -222,7 +217,6 @@ export class SceneService {
       sceneDeviceCreated.push(sceneDevice);
     });
 
-
     // Default action to empty array to avoid find repository error
     // when find with empty array
     let actions: ActionOrm[] = [];
@@ -230,11 +224,12 @@ export class SceneService {
     if (updateSceneDto.actions.length > 0) {
       actions = await this.actionRepository.find({
         where: { id: In(updateSceneDto.actions) },
-        relations: { device: true }
+        relations: { device: true },
       });
     }
 
-    const updatedScene = this.sceneDeviceRepository.save(sceneDeviceCreated);
+    const updatedScene =
+      await this.sceneDeviceRepository.save(sceneDeviceCreated);
 
     if (scene.sceneAction.length === 0) {
       actions.forEach(async (action) => {
@@ -242,7 +237,7 @@ export class SceneService {
         sceneAction.action = action;
         sceneAction.scene = scene;
         await this.sceneActionRepository.save(sceneAction);
-      })
+      });
     } else {
       /**
        * This section need to be update
@@ -252,7 +247,7 @@ export class SceneService {
       // Clear previous selected action
       scene.sceneAction.forEach(async (sceneAction) => {
         await this.sceneActionRepository.remove(sceneAction);
-      })
+      });
 
       // Add updated scene action
       actions.forEach(async (action) => {
@@ -260,11 +255,15 @@ export class SceneService {
         sceneAction.action = action;
         sceneAction.scene = scene;
         const hehe = await this.sceneActionRepository.save(sceneAction);
-      })
+      });
     }
 
-    return this.sceneDeviceRepository.find({
-      where: { sceneId: id },
+    return this.sceneRepository.find({
+      where: { id },
+      relations: {
+        sceneAction: true,
+        sceneDevice: true,
+      },
     });
   }
 
