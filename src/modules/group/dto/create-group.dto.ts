@@ -6,5 +6,5 @@ class DeviceDto extends CreateDeviceDto {
 
 export class CreateGroupDto {
   name: string = 'My Group';
-  devices: DeviceDto[];
+  deviceIds: number[];
 }
