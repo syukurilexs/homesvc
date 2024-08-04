@@ -8,6 +8,8 @@ import {
   Param,
   Delete,
   Put,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { SceneService } from './scene.service';
 import { CreateSceneDto } from './dto/create-scene.dto';
@@ -24,11 +26,13 @@ export class SceneController {
     return this.sceneService.create(createSceneDto);
   }
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Get()
   findAll() {
     return this.sceneService.findAll();
   }
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.sceneService.findOne(+id);

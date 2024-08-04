@@ -7,12 +7,13 @@ import { State } from 'src/commons/enums/state.enum';
 import { In, Repository } from 'typeorm';
 import { CreateSceneDto } from './dto/create-scene.dto';
 import { UpdateSceneDto } from './dto/update-scene.dto';
-import { UpdateStateSceneDto } from './dto/update-state-scene.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_DEVICE_UPDATE_STATE } from 'src/utils/constants';
 import { DeviceToggle } from 'src/commons/types/device-toggle.type';
 import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
 import { ActionOrm } from 'src/typeorm/action.entity';
+import { Scene, SceneAction } from './entities/scene.entity';
+import { classToPlain, plainToClass } from 'class-transformer';
 
 @Injectable()
 export class SceneService {
@@ -127,8 +128,8 @@ export class SceneService {
     });
   }
 
-  findAll() {
-    return this.sceneRepository.find({
+  async findAll() {
+    const scenes = await this.sceneRepository.find({
       relations: {
         sceneDevice: {
           device: true,
@@ -140,10 +141,12 @@ export class SceneService {
         },
       },
     });
+
+    return scenes.map((x) => new Scene(x));
   }
 
-  findOne(id: number) {
-    return this.sceneRepository.findOne({
+  async findOne(id: number) {
+    const scene = await this.sceneRepository.findOne({
       where: { id },
       relations: {
         sceneDevice: {
@@ -156,6 +159,8 @@ export class SceneService {
         },
       },
     });
+
+    return new Scene(scene);
   }
 
   async update(id: number, updateSceneDto: UpdateSceneDto) {
