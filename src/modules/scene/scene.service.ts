@@ -91,7 +91,7 @@ export class SceneService {
         .findOneBy({ id: deviceDto.id })
         .then((device) => {
           const sceneDevice = this.sceneDeviceRepository.create({
-            state: deviceDto.state ? State.On : State.Off,
+            state: deviceDto.state,
             device,
             scene,
           });
@@ -182,12 +182,10 @@ export class SceneService {
     const updated: SceneDeviceOrm[] = [];
 
     sceneDevices.forEach((x) => {
-      const idx = updateSceneDto.devices.findIndex((y) => y.id === x.deviceId);
+      const index = updateSceneDto.devices.findIndex((y) => y.id === x.deviceId);
 
-      if (idx > -1) {
-        if (
-          x.state !== (updateSceneDto.devices[idx].state ? State.On : State.Off)
-        ) {
+      if (index > -1) {
+        if (x.state !== updateSceneDto.devices[index].state) {
           x.state = x.state === State.Off ? State.On : State.Off;
           updated.push(x);
         }
@@ -246,21 +244,25 @@ export class SceneService {
     } else {
       /**
        * This section need to be update
-       * current implementation is not optimize
-       * and just quick solution
+       * current implementation is not efficient
+       * and just a quick solution
        */
       // Clear previous selected action
-      scene.sceneAction.forEach(async (sceneAction) => {
-        await this.sceneActionRepository.remove(sceneAction);
-      });
+      for (let index = 0; index < scene.sceneAction.length; index++) {
+        const element = scene.sceneAction[index];
+
+        await this.sceneActionRepository.remove(element);
+      }
 
       // Add updated scene action
-      actions.forEach(async (action) => {
+      for (let index = 0; index < actions.length; index++) {
+        const element = actions[index];
+
         const sceneAction = new SceneActionOrm();
-        sceneAction.action = action;
+        sceneAction.action = element;
         sceneAction.scene = scene;
-        const hehe = await this.sceneActionRepository.save(sceneAction);
-      });
+        await this.sceneActionRepository.save(sceneAction);
+      }
     }
 
     return this.sceneRepository.find({

@@ -1,3 +1,4 @@
+import { State } from 'src/commons/enums/state.enum';
 import { CreateDeviceDto } from '../../device/dto/create-device.dto';
 
 export class CreateSceneDto {
@@ -8,5 +9,5 @@ export class CreateSceneDto {
 
 export class SceneDeviceDto {
   id: number;
-  state: boolean;
+  state: State;
 }
