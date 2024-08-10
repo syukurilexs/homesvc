@@ -25,10 +25,9 @@ export class TimerService {
     @InjectRepository(DeviceOrm)
     private deviceRepository: Repository<DeviceOrm>,
     private readonly eventEmitter: EventEmitter2,
-    private readonly taskService: TaskService
-  ) { }
+    private readonly taskService: TaskService,
+  ) {}
 
-  
   /**
    * Get all job from repository and attachs timer information
    * @date 3/29/2024 - 11:49:14 AM
@@ -44,30 +43,29 @@ export class TimerService {
 
     // Formating the job and include timer information
     for (let [key, value] of jobs) {
-
-      let last = 'Cannot get date', next = 'Cannot get date';
+      let last = 'Cannot get date',
+        next = 'Cannot get date';
 
       try {
         next = value.nextDate().toJSDate().toString();
       } catch (error) {
-        // use default value 
+        // use default value
       }
 
       try {
         last = value.lastDate().toString();
       } catch (error) {
-        // use default value 
+        // use default value
       }
 
-      const timer = await this.timerRepository.findOne(
-        {
-          where: {
-            id: (() => Number(key.replace('cron_', '')))()
-          },
-          relations: {
-            device: true
-          }
-        })
+      const timer = await this.timerRepository.findOne({
+        where: {
+          id: (() => Number(key.replace('cron_', '')))(),
+        },
+        relations: {
+          device: true,
+        },
+      });
 
       newJobs.push({
         name: key,
@@ -75,9 +73,9 @@ export class TimerService {
         lastrun: last,
         device: timer.device.name,
         state: timer.state,
-        status: timer.option
-      })
-    };
+        status: timer.option,
+      });
+    }
 
     return newJobs;
   }
@@ -110,7 +108,7 @@ export class TimerService {
 
     const saved = await this.deviceRepository.save(device);
 
-    // Cannot use savedTimer as input for EVENT_TASK_ADD 
+    // Cannot use savedTimer as input for EVENT_TASK_ADD
     // becuase newTimer still don't have the device. Have to query
     // with relationship
     const newTimer = await this.timerRepository.findOne({
@@ -139,9 +137,13 @@ export class TimerService {
    * @returns Timer
    */
   findOne(id: number) {
-    return this.timerRepository.findOneBy({ id });
+    return this.timerRepository.findOne({
+      where: { id },
+      relations: {
+        device: true,
+      },
+    });
   }
-
 
   /**
    * Updating the time for the timer
@@ -168,7 +170,7 @@ export class TimerService {
     }
 
     if (updateTimerDto.time) {
-      timer.time = updateTimerDto.time
+      timer.time = updateTimerDto.time;
     }
 
     const newtimer = await this.timerRepository.save(timer);
