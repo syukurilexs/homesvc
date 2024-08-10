@@ -1,7 +1,12 @@
 import { ActionOrm } from '../../typeorm/action.entity';
 import { CreateSwitchDto } from './dto/create-switch.dto';
 import { MqttService } from '../mqtt/mqtt.service';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { DeviceType } from 'src/commons/enums/device-type.enum';
@@ -28,6 +33,10 @@ import { SuisEntity } from './entities/suis.entity';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { LightEntity } from './entities/light.entity';
 import { ActionEntity } from './entities/action.entity';
+import { CreateRpiDto } from './dto/create-rpi.dto';
+import { RpiOrm } from 'src/typeorm/rpi.entity';
+import { RpiEntity } from './entities/rpi.entity';
+import { UpdateRpiDto } from './dto/update-rpi.dto';
 
 @Injectable()
 export class DeviceService {
@@ -44,7 +53,31 @@ export class DeviceService {
     private activityLogRepository: Repository<ActivityLogOrm>,
     @InjectRepository(ContactSensorOrm)
     private contactSensorRepository: Repository<ContactSensorOrm>,
+    @InjectRepository(RpiOrm)
+    private rpiRepository: Repository<RpiOrm>,
   ) {}
+
+  async createRpi(createRpiDto: CreateRpiDto) {
+    // Create common device
+    const deviceEntity = this.deviceRepository.create({
+      name: createRpiDto.name,
+      remark: createRpiDto.remark || '',
+      topic: createRpiDto.topic,
+      type: DeviceType.Rpi,
+    });
+
+    // Create rpi
+    const rpiEntity = this.rpiRepository.create({
+      on: createRpiDto.on,
+      off: createRpiDto.off,
+      device: deviceEntity,
+    });
+
+    // Save entity and cascade
+    await this.rpiRepository.save(rpiEntity);
+
+    return this.deviceRepository.find({ relations: { rpi: true } });
+  }
 
   /**
    * Creating device (Light & Fan)
@@ -156,6 +189,7 @@ export class DeviceService {
               device: true,
             },
           },
+          rpi: true,
         },
       });
 
@@ -165,6 +199,7 @@ export class DeviceService {
         relations: {
           action: true,
           selectedAction: { action: { device: true } },
+          rpi: true,
         },
       });
 
@@ -183,6 +218,7 @@ export class DeviceService {
           },
         },
         contactSensor: true,
+        rpi: true,
       },
     });
 
@@ -240,6 +276,16 @@ export class DeviceService {
             name: x.action.device.name,
           };
         }),
+      });
+    } else if (input.type === DeviceType.Rpi) {
+      return new RpiEntity({
+        id: input.id,
+        name: input.name,
+        remark: input.remark,
+        topic: input.topic,
+        type: input.type,
+        on: input.rpi.on,
+        off: input.rpi.off,
       });
     }
   }
@@ -396,6 +442,65 @@ export class DeviceService {
     this.eventEmitter.emit(EVENT_SWITCH_RELOAD);
 
     return updatedSuis;
+  }
+
+  async updateRpi(id: number, updateRpiDto: UpdateRpiDto) {
+    // Find device
+    const device = await this.deviceRepository.findOne({
+      where: { id: id },
+      relations: {
+        rpi: true,
+      },
+    });
+
+    // Throw if not found
+    if (device === null) {
+      throw new HttpException(
+        `Device Id ${id} not found`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Update if found
+    if (updateRpiDto.name) {
+      device.name = updateRpiDto.name;
+    }
+
+    if (updateRpiDto.remark) {
+      device.remark = updateRpiDto.remark;
+    }
+
+    if (updateRpiDto.topic) {
+      device.topic = updateRpiDto.topic;
+    }
+
+    await this.deviceRepository.save(device);
+
+    // Find rpi
+    const rpi = await this.rpiRepository.findOne({
+      where: { id: device.rpi.id },
+    });
+
+    if (rpi === null) {
+      throw new BadRequestException(`Rpi Id ${device.id} not found`);
+    }
+
+    if (rpi) {
+      if (updateRpiDto.off) {
+        rpi.off = updateRpiDto.off;
+      }
+
+      if (updateRpiDto.on) {
+        rpi.on = updateRpiDto.on;
+      }
+
+      await this.rpiRepository.save(rpi);
+    }
+
+    return this.deviceRepository.findOne({
+      where: { id },
+      relations: { rpi: true },
+    });
   }
 
   async remove(id: number) {

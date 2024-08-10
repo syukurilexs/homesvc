@@ -7,6 +7,7 @@ import { DeviceOrm } from 'src/typeorm/device.entity';
 import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 import { ContactSensorOrm } from 'src/typeorm/contact-sensor.entity';
+import { RpiOrm } from 'src/typeorm/rpi.entity';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { ContactSensorOrm } from 'src/typeorm/contact-sensor.entity';
       ActionOrm,
       SelectedActionOrm,
       ActivityLogOrm,
-      ContactSensorOrm
+      ContactSensorOrm,
+      RpiOrm
     ]),
   ],
   controllers: [DeviceController],

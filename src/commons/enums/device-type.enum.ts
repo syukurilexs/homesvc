@@ -4,4 +4,5 @@ export enum DeviceType {
   Switch = 'switch',
   Pir = 'pir',
   Contact = 'contact',
+  Rpi = 'rpi'
 }

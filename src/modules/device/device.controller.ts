@@ -26,6 +26,8 @@ import { UpdateStateDto } from './dto/state.dto';
 import { CreateSwitchDto } from './dto/create-switch.dto';
 import { CreateContactDto as CreateContactSensorDto } from './dto/create-contact-sensor.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
+import { CreateRpiDto } from './dto/create-rpi.dto';
+import { UpdateRpiDto } from './dto/update-rpi.dto';
 
 @ApiTags('Device')
 @Controller('device')
@@ -45,6 +47,11 @@ export class DeviceController {
   @Post('contactsensor')
   createContactSensor(@Body() createContactSensorDto: CreateContactSensorDto) {
     return this.deviceService.createContactSensor(createContactSensorDto);
+  }
+
+  @Post('rpi')
+  createRpi(@Body() createRpiDto: CreateRpiDto) {
+    return this.deviceService.createRpi(createRpiDto);
   }
 
   @UseInterceptors(ClassSerializerInterceptor)
@@ -104,6 +111,14 @@ export class DeviceController {
     @Body() updateSwitchDto: UpdateSwitchDto,
   ) {
     return this.deviceService.updateSwitch(+id, updateSwitchDto);
+  }
+
+  @Patch('rpi/:id')
+  updateRpi(
+    @Param('id') id: string,
+    @Body() updateRpiDto: UpdateRpiDto,
+  ) {
+    return this.deviceService.updateRpi(+id, updateRpiDto);
   }
 
   @Delete(':id')
