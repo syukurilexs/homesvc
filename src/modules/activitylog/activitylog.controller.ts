@@ -17,4 +17,9 @@ export class ActivitylogController {
   ): Promise<PageEntity<ActivityLogOrm>> {
     return this.activitylogService.findByPage(pageOptionsDto);
   }
+
+  @Get('clear')
+  clear() {
+    return this.activitylogService.clear();
+  }
 }

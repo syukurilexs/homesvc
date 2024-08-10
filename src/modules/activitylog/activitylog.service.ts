@@ -8,12 +8,15 @@ import { PageMetaEntity } from './entities/page-meta.entity';
 
 @Injectable()
 export class ActivitylogService {
-
   constructor(
-    @InjectRepository(ActivityLogOrm) private activityLogRepository: Repository<ActivityLogOrm>
-  ) { }
+    @InjectRepository(ActivityLogOrm)
+    private activityLogRepository: Repository<ActivityLogOrm>,
+  ) {}
 
-  
+  clear() {
+    return this.activityLogRepository.clear();
+  }
+
   /**
    * Get activity log using pagination concept
    * @date 3/30/2024 - 9:04:23 AM
@@ -27,8 +30,8 @@ export class ActivitylogService {
       skip: pageOptionsDto.skip,
       take: pageOptionsDto.take,
       order: {
-        id: pageOptionsDto.order
-      }
+        id: pageOptionsDto.order,
+      },
     });
 
     const itemCount = await this.activityLogRepository.count();
