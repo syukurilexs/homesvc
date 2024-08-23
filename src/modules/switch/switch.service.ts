@@ -10,8 +10,6 @@ import {
   EVENT_DEVICE_UPDATE_STATE,
   EVENT_SWITCH_RELOAD,
 } from 'src/utils/constants';
-import { DeviceToggle as DeviceState } from 'src/commons/types/device-toggle.type';
-import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 
@@ -19,7 +17,7 @@ import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 export class SwitchService {
   constructor(
     @InjectRepository(DeviceOrm) private deviceRepo: Repository<DeviceOrm>,
-    @InjectRepository(SelectedActionOrm) private selectedActionRepo: Repository<SelectedActionOrm>,
+    // @InjectRepository(SelectedActionOrm) private selectedActionRepo: Repository<SelectedActionOrm>,
     @InjectRepository(SceneActionOrm) private sceneActionRepo: Repository<SceneActionOrm>,
     @InjectRepository(ActivityLogOrm) private activityLogRepo: Repository<ActivityLogOrm>,
     private readonly mqttService: MqttService,
@@ -35,7 +33,7 @@ export class SwitchService {
     });
 
     devices.forEach((device) => {
-      this.mqttService.subscribe(device.topic);
+      // this.mqttService.subscribe(device.topic);
     });
   }
 
@@ -46,6 +44,7 @@ export class SwitchService {
    * @date 3/28/2024 - 8:18:49 AM
    */
   onSwitch() {
+    /*
     this.mqttService.onSwitch().subscribe((data) => {
       const topic = data.topic;
       const payload = JSON.parse(data.payload.toString());
@@ -135,6 +134,7 @@ export class SwitchService {
         })
       }
     });
+    */
   }
 
   @OnEvent(EVENT_SWITCH_RELOAD)
