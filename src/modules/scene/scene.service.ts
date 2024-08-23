@@ -57,12 +57,6 @@ export class SceneService {
 
     // Update device state according to scene state
     // Note: The actual state is in device table !!!
-    for (let index = 0; index < devices.length; index++) {
-      devices[index].state =
-        scene.sceneDevice[
-          scene.sceneDevice.findIndex((x) => x.deviceId === devices[index].id)
-        ].state;
-    }
 
     await this.deviceRepository.save(devices);
 
@@ -136,11 +130,15 @@ export class SceneService {
         },
         sceneAction: {
           action: {
-            device: true,
+            suis: {
+              device: true,
+            },
           },
         },
       },
     });
+
+    return scenes;
 
     return scenes.map((x) => new Scene(x));
   }
@@ -154,12 +152,15 @@ export class SceneService {
         },
         sceneAction: {
           action: {
-            device: true,
+            suis: {
+              device: true,
+            },
           },
         },
       },
     });
 
+    return scene;
     return new Scene(scene);
   }
 
@@ -182,7 +183,9 @@ export class SceneService {
     const updated: SceneDeviceOrm[] = [];
 
     sceneDevices.forEach((x) => {
-      const index = updateSceneDto.devices.findIndex((y) => y.id === x.deviceId);
+      const index = updateSceneDto.devices.findIndex(
+        (y) => y.id === x.deviceId,
+      );
 
       if (index > -1) {
         if (x.state !== updateSceneDto.devices[index].state) {
@@ -197,20 +200,20 @@ export class SceneService {
     }
 
     // Find deleted device
-    const deleted = sceneDevices.filter((x) => {
+    const toDelete = sceneDevices.filter((x) => {
       return updateSceneDto.devices.findIndex((y) => y.id === x.deviceId) < 0;
     });
 
-    await this.sceneDeviceRepository.remove(deleted);
+    await this.sceneDeviceRepository.remove(toDelete);
 
     // Create new device
-    const added = updateSceneDto.devices.filter((x) => {
+    const toAdd = updateSceneDto.devices.filter((x) => {
       return sceneDevices.findIndex((y) => y.deviceId === x.id) < 0;
     });
 
     const sceneDeviceCreated: SceneDeviceOrm[] = [];
 
-    added.forEach((x) => {
+    toAdd.forEach((x) => {
       const sceneDevice = this.sceneDeviceRepository.create({
         deviceId: x.id,
         sceneId: sceneDevices[0].sceneId,
@@ -227,7 +230,7 @@ export class SceneService {
     if (updateSceneDto.actions.length > 0) {
       actions = await this.actionRepository.find({
         where: { id: In(updateSceneDto.actions) },
-        relations: { device: true },
+        relations: { suis: { device: true } },
       });
     }
 
@@ -235,12 +238,14 @@ export class SceneService {
       await this.sceneDeviceRepository.save(sceneDeviceCreated);
 
     if (scene.sceneAction.length === 0) {
-      actions.forEach(async (action) => {
+      for (let index = 0; index < actions.length; index++) {
+        const element = actions[index];
+
         const sceneAction = new SceneActionOrm();
-        sceneAction.action = action;
+        sceneAction.action = element;
         sceneAction.scene = scene;
         await this.sceneActionRepository.save(sceneAction);
-      });
+      }
     } else {
       /**
        * This section need to be update

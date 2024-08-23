@@ -1,13 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { DeviceType } from 'src/commons/enums/device-type.enum';
-import { ArrayNotEmpty } from 'class-validator';
+import { ArrayNotEmpty, IsNotEmpty, isString, IsString } from 'class-validator';
 
 export class CreateSwitchDto {
+  @IsString()
+  @IsNotEmpty()
   name: string = 'SUIS01_Single';
 
-  @ApiProperty({ enum: DeviceType, default: DeviceType.Light })
-  type: DeviceType;
-
+  @IsString()
+  @IsNotEmpty()
   topic: string;
 
   @ArrayNotEmpty()
@@ -17,9 +16,11 @@ export class CreateSwitchDto {
 }
 
 export class CreateSwitchActionDto {
-  id?: number;
-  
+  @IsString()
+  @IsNotEmpty()
   key: string;
 
+  @IsString()
+  @IsNotEmpty()
   value: string;
 }

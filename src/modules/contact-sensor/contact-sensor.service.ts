@@ -3,7 +3,6 @@ import { MqttService } from '../mqtt/mqtt.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { Repository } from 'typeorm';
-import { DeviceType } from 'src/commons/enums/device-type.enum';
 import { OnEvent } from '@nestjs/event-emitter';
 import { EVENT_CONTACT_RELOAD } from 'src/utils/constants';
 
@@ -20,6 +19,7 @@ export class ContactSensorService {
     }
 
     onContactSensor() {
+        /*
         this.mqttService.onContactSensor().subscribe(async ({topic, payload})=> {
             const data = JSON.parse(payload);
 
@@ -42,9 +42,11 @@ export class ContactSensorService {
                     await this.deviceRepository.save(device)
                 }
         });
+        */
     }
 
     async onLoad() {
+        /*
         const devices = await this.deviceRepository.find({
             where: {
                 type: DeviceType.Contact
@@ -54,6 +56,7 @@ export class ContactSensorService {
         devices.forEach((device) => {
             this.mqttService.subscribe(device.topic);
         })
+            */
     }
 
 

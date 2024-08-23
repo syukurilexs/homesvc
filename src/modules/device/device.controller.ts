@@ -20,23 +20,29 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { DeviceService } from './device.service';
-import { CreateDeviceDto } from './dto/create-device.dto';
-import { UpdateDeviceDto } from './dto/update-device.dto';
 import { UpdateStateDto } from './dto/state.dto';
 import { CreateSwitchDto } from './dto/create-switch.dto';
 import { CreateContactDto as CreateContactSensorDto } from './dto/create-contact-sensor.dto';
-import { UpdateContactDto } from './dto/update-contact.dto';
 import { CreateRpiDto } from './dto/create-rpi.dto';
 import { UpdateRpiDto } from './dto/update-rpi.dto';
+import { CreateFanDto } from './dto/create-fan.dto';
+import { CreateLightDto } from './dto/create-light.dto';
+import { UpdateFanDto } from './dto/update-fan.dto';
+import { UpdateLightDto } from './dto/update-light.dto';
 
 @ApiTags('Device')
 @Controller('device')
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 
-  @Post()
-  create(@Body() createDeviceDto: CreateDeviceDto) {
-    return this.deviceService.create(createDeviceDto);
+  @Post('light')
+  create(@Body() createDeviceDto: CreateLightDto) {
+    return this.deviceService.createLight(createDeviceDto);
+  }
+
+  @Post('fan')
+  createFan(@Body() createFanDto: CreateFanDto) {
+    return this.deviceService.createFan(createFanDto);
   }
 
   @Post('switch')
@@ -79,30 +85,14 @@ export class DeviceController {
     return this.deviceService.findOne(+id);
   }
 
-  @Patch(':id')
-  @ApiExtraModels(UpdateContactDto, UpdateDeviceDto)
-  @ApiBody({
-    schema: {
-      oneOf: [
-        { $ref: getSchemaPath(UpdateContactDto) },
-        { $ref: getSchemaPath(UpdateDeviceDto) },
-      ],
-    },
-  })
-  update(
-    @Param('id') id: string,
-    @Body() updateDeviceDto: UpdateContactDto | UpdateDeviceDto,
-  ) {
-    // Check type and update according to type
-    // Some type not worth to share common module when the diffrential is too much
-    if (updateDeviceDto.type === DeviceType.Contact) {
-      return this.deviceService.updateContact(
-        +id,
-        updateDeviceDto as UpdateContactDto,
-      );
-    } else {
-      return this.deviceService.update(+id, updateDeviceDto);
-    }
+  @Patch('fan/:id')
+  updateFan(@Param('id') id: string, @Body() updateFanDto: UpdateFanDto) {
+    return this.deviceService.updateFan(+id, updateFanDto);
+  }
+
+  @Patch('light/:id')
+  updateLight(@Param('id') id: string, @Body() updateLightDto: UpdateLightDto) {
+    return this.deviceService.updateLight(+id, updateLightDto);
   }
 
   @Patch('switch/:id')
@@ -114,10 +104,7 @@ export class DeviceController {
   }
 
   @Patch('rpi/:id')
-  updateRpi(
-    @Param('id') id: string,
-    @Body() updateRpiDto: UpdateRpiDto,
-  ) {
+  updateRpi(@Param('id') id: string, @Body() updateRpiDto: UpdateRpiDto) {
     return this.deviceService.updateRpi(+id, updateRpiDto);
   }
 

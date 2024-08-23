@@ -24,7 +24,6 @@ import {
   WS_DEVICE,
 } from 'src/utils/constants';
 import { DeviceToggle } from 'src/commons/types/device-toggle.type';
-import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 import { CreateContactDto } from './dto/create-contact-sensor.dto';
 import { ContactSensorOrm } from 'src/typeorm/contact-sensor.entity';
@@ -37,6 +36,14 @@ import { CreateRpiDto } from './dto/create-rpi.dto';
 import { RpiOrm } from 'src/typeorm/rpi.entity';
 import { RpiEntity } from './entities/rpi.entity';
 import { UpdateRpiDto } from './dto/update-rpi.dto';
+import { CreateFanDto } from './dto/create-fan.dto';
+import { CreateLightDto } from './dto/create-light.dto';
+import { FanOrm } from 'src/typeorm/fan.entity';
+import { UpdateFanDto } from './dto/update-fan.dto';
+import { defaultIfEmpty } from 'rxjs';
+import { LightOrm } from 'src/typeorm/light.entity';
+import { UpdateLightDto } from './dto/update-light.dto';
+import { SuisOrm } from 'src/typeorm/suis.entity';
 
 @Injectable()
 export class DeviceService {
@@ -47,17 +54,22 @@ export class DeviceService {
     private actionRepository: Repository<ActionOrm>,
     private readonly mqttService: MqttService,
     private eventEmitter: EventEmitter2,
-    @InjectRepository(SelectedActionOrm)
-    private selectedActionRepository: Repository<SelectedActionOrm>,
     @InjectRepository(ActivityLogOrm)
     private activityLogRepository: Repository<ActivityLogOrm>,
     @InjectRepository(ContactSensorOrm)
     private contactSensorRepository: Repository<ContactSensorOrm>,
     @InjectRepository(RpiOrm)
     private rpiRepository: Repository<RpiOrm>,
+    @InjectRepository(FanOrm)
+    private fanRepository: Repository<FanOrm>,
+    @InjectRepository(LightOrm)
+    private lightRepository: Repository<LightOrm>,
+    @InjectRepository(SuisOrm)
+    private suisRepository: Repository<SuisOrm>,
   ) {}
 
   async createRpi(createRpiDto: CreateRpiDto) {
+    /*
     // Create common device
     const deviceEntity = this.deviceRepository.create({
       name: createRpiDto.name,
@@ -77,66 +89,90 @@ export class DeviceService {
     await this.rpiRepository.save(rpiEntity);
 
     return this.deviceRepository.find({ relations: { rpi: true } });
+    */
   }
 
+  createLight(createLightDto: CreateLightDto) {
+    // Create common device
+    const deviceEntity = this.deviceRepository.create({
+      name: createLightDto.name,
+      type: DeviceType.Light,
+      remark: createLightDto.remark,
+    });
+
+    // Create light entity
+    const lightEntity = this.lightRepository.create({
+      topic: createLightDto.topic,
+    });
+    deviceEntity.light = lightEntity;
+
+    // Save device and cascade to light
+    return this.deviceRepository.save(deviceEntity);
+  }
   /**
    * Creating device (Light & Fan)
    * @date 4/9/2024 - 10:43:50 AM
    *
    * @async
-   * @param {CreateDeviceDto} createDeviceDto
+   * @param {CreateDeviceDto} createFanDto
    * @returns {unknown}
    */
-  async create(createDeviceDto: CreateDeviceDto) {
+  async createFan(createFanDto: CreateFanDto) {
+    // Create common device
     const deviceEntity = this.deviceRepository.create({
-      name: createDeviceDto.name,
-      type: createDeviceDto.type,
-      topic: createDeviceDto.topic,
-      remark: createDeviceDto.remark,
+      name: createFanDto.name,
+      type: DeviceType.Fan,
+      remark: createFanDto.remark,
     });
+
+    // Create fan entity
+    const fanEntity = this.fanRepository.create({
+      actions: [],
+      topic: createFanDto.topic,
+    });
+    deviceEntity.fan = fanEntity;
 
     // Get action from Action Table based on selected action from input DTO
     const foundAction = await this.actionRepository.find({
-      where: { id: In(createDeviceDto.actions) },
+      where: { id: In(createFanDto.actions) },
     });
+
+    deviceEntity.fan.actions.push(...foundAction);
 
     // Save device to server and get return saved device with id
     const savedDevice = await this.deviceRepository.save(deviceEntity);
-
-    // Maps device and action to intermediate table (SelectedAction Table)
-    foundAction.forEach(async (action) => {
-      // Create selected device and maps saved device with found action
-      const selectedActionEntity = new SelectedActionOrm();
-      selectedActionEntity.device = savedDevice;
-      selectedActionEntity.action = action;
-
-      // Insert selected action into intermediate table
-      await this.selectedActionRepository.save(selectedActionEntity);
-    });
 
     return savedDevice;
   }
 
   async createSwitch(createSwitchDto: CreateSwitchDto) {
-    const suis = this.deviceRepository.create({
+    // Create device
+    const deviceEntity = this.deviceRepository.create({
       name: createSwitchDto.name,
-      type: createSwitchDto.type,
-      topic: createSwitchDto.topic,
+      type: DeviceType.Switch,
       remark: createSwitchDto.remark,
     });
 
-    const suisOutput = await this.deviceRepository.save(suis);
+    // Create suis
+    const suisEntity = this.suisRepository.create({
+      actions: [],
+      topic: createSwitchDto.topic,
+    });
 
+    // Create action and push to suis
     createSwitchDto.action.forEach(async (action) => {
       const switchInfo = this.actionRepository.create({
         key: action.key,
         value: action.value,
       });
 
-      switchInfo.device = suis;
-
-      await this.actionRepository.save(switchInfo);
+      suisEntity.actions.push(switchInfo);
     });
+
+    deviceEntity.suis = suisEntity;
+
+    // Save device together with cascade suis and action
+    const suisOutput = await this.deviceRepository.save(deviceEntity);
 
     this.eventEmitter.emit(EVENT_SWITCH_RELOAD);
 
@@ -152,6 +188,7 @@ export class DeviceService {
    * @returns {unknown}
    */
   async createContactSensor(createContactSensorDto: CreateContactDto) {
+    /*
     // Create device
     const device = this.deviceRepository.create({
       name: createContactSensorDto.name,
@@ -174,6 +211,7 @@ export class DeviceService {
     this.eventEmitter.emit(EVENT_CONTACT_RELOAD);
 
     return saveContact;
+    */
   }
 
   async findAll(type: DeviceType) {
@@ -183,27 +221,23 @@ export class DeviceService {
           type: type,
         },
         relations: {
-          action: true,
-          selectedAction: {
-            action: {
-              device: true,
-            },
-          },
-          rpi: true,
+          fan: { actions: { suis: { device: true } } },
+          light: { actions: { suis: { device: true } } },
+          suis: { actions: true },
         },
       });
 
-      return output.map((x) => this.mapDevice(x));
+      return output;
     } else {
       const output = await this.deviceRepository.find({
         relations: {
-          action: true,
-          selectedAction: { action: { device: true } },
-          rpi: true,
+          fan: { actions: { suis: { device: true } } },
+          light: { actions: { suis: { device: true } } },
+          suis: { actions: true },
         },
       });
 
-      return output.map((x) => this.mapDevice(x));
+      return output;
     }
   }
 
@@ -211,14 +245,11 @@ export class DeviceService {
     const output = await this.deviceRepository.findOne({
       where: { id },
       relations: {
-        action: true,
-        selectedAction: {
-          action: {
-            device: true,
-          },
+        fan: { actions: { suis: { device: true } } },
+        light: { actions: { suis: { device: true } } },
+        suis: {
+          actions: true,
         },
-        contactSensor: true,
-        rpi: true,
       },
     });
 
@@ -229,10 +260,12 @@ export class DeviceService {
       );
     }
 
+    return output;
     return this.mapDevice(output);
   }
 
   mapDevice(input: DeviceOrm) {
+    /*
     if (input.type === DeviceType.Contact) {
       return new ContactEntity({
         id: input.id,
@@ -288,61 +321,80 @@ export class DeviceService {
         off: input.rpi.off,
       });
     }
+      */
   }
 
-  async update(id: number, updateDeviceDto: UpdateDeviceDto) {
+  async updateLight(id: number, updateLightDto: UpdateLightDto) {
+    // Get device and light
     const device = await this.deviceRepository.findOne({
       where: { id },
-      relations: { selectedAction: true },
+      relations: { light: true },
     });
 
-    if (updateDeviceDto.name) {
-      device.name = updateDeviceDto.name;
+    if (device === null) {
+      throw new BadRequestException(`Light not found for id ${id}`);
     }
 
-    if (updateDeviceDto.topic) {
-      device.topic = updateDeviceDto.topic;
+    // Name
+    if (updateLightDto.name) {
+      device.name = updateLightDto.name;
     }
 
-    if (updateDeviceDto.remark) {
-      device.remark = updateDeviceDto.remark;
+    // Remark
+    if (updateLightDto.remark) {
+      device.remark = updateLightDto.remark;
     }
 
+    // Topic
+    if (updateLightDto.topic) {
+      device.light.topic = updateLightDto.topic;
+    }
+
+    // Get action
     const actions = await this.actionRepository.find({
-      where: { id: In(updateDeviceDto.actions) },
-      relations: { device: true },
+      where: { id: In(updateLightDto.actions) },
     });
 
-    const updatedDevice = await this.deviceRepository.save(device);
+    device.light.actions = actions;
 
-    if (device.selectedAction.length === 0) {
-      actions.forEach(async (action) => {
-        const selectedAction = new SelectedActionOrm();
-        selectedAction.action = action;
-        selectedAction.device = device;
-        await this.selectedActionRepository.save(selectedAction);
-      });
-    } else {
-      /**
-       * This section need to be update
-       * current implementation is not optimise
-       * and just quick solution
-       */
-      // Clear previous selected action
-      device.selectedAction.forEach(async (x) => {
-        await this.selectedActionRepository.remove(x);
-      });
+    return this.deviceRepository.save(device);
+  }
 
-      // Add updated selected action
-      actions.forEach(async (action) => {
-        const selectedAction = new SelectedActionOrm();
-        selectedAction.action = action;
-        selectedAction.device = device;
-        await this.selectedActionRepository.save(selectedAction);
-      });
+  async updateFan(id: number, updateFanDto: UpdateFanDto) {
+    // Get device and fan
+    const device = await this.deviceRepository.findOne({
+      where: { id },
+      relations: { fan: { actions: true } },
+    });
+
+    if (device === null) {
+      throw new BadRequestException(`Fan not found for id ${id}`);
     }
 
-    return updatedDevice;
+    // Name
+    if (updateFanDto.name) {
+      device.name = updateFanDto.name;
+    }
+
+    // Remark
+    if (updateFanDto.remark) {
+      device.remark = updateFanDto.remark;
+    }
+
+    // Topic
+    if (updateFanDto.topic) {
+      device.fan.topic = updateFanDto.topic;
+    }
+
+    // Get action
+    const actions = await this.actionRepository.find({
+      where: {
+        id: In(updateFanDto.actions),
+      },
+    });
+    device.fan.actions = actions;
+
+    return this.deviceRepository.save(device);
   }
 
   /**
@@ -355,6 +407,7 @@ export class DeviceService {
    * @returns {unknown} Return saved device only
    */
   async updateContact(id: number, updateDeviceDto: UpdateContactDto) {
+    /*
     // Get contact base on id
     const device = await this.deviceRepository.findOne({
       where: {
@@ -391,53 +444,62 @@ export class DeviceService {
     this.eventEmitter.emit(EVENT_CONTACT_RELOAD);
 
     return savedContact;
+    */
   }
 
   async updateSwitch(id: number, updateSwitchDto: UpdateSwitchDto) {
-    const suis = await this.deviceRepository.findOne({
+    console.log(updateSwitchDto);
+    const deviceSuis = await this.deviceRepository.findOne({
       where: { id },
-      relations: { action: true },
+      relations: {
+        suis: {
+          actions: true,
+        },
+      },
     });
 
     if (updateSwitchDto.name) {
-      suis.name = updateSwitchDto.name;
+      deviceSuis.name = updateSwitchDto.name;
     }
 
     if (updateSwitchDto.topic) {
-      suis.topic = updateSwitchDto.topic;
+      deviceSuis.suis.topic = updateSwitchDto.topic;
     }
 
     if (updateSwitchDto.remark) {
-      suis.remark = updateSwitchDto.remark;
+      deviceSuis.remark = updateSwitchDto.remark;
     }
 
-    /**
-     * Delete action
-     */
-    const toDeleteAction = suis.action.filter((action) => {
-      return updateSwitchDto.action.find((element) => element.id === action.id)
-        ? false
-        : true;
-    });
+    // Find and delete action
+    const toDeleteAction = deviceSuis.suis.actions.filter(
+      (action, indx, arr) => {
+        const result = updateSwitchDto.action.find(
+          (element) => element.id === action.id,
+        )
+          ? false
+          : true;
 
-    toDeleteAction.forEach(async (action) => {
-      await this.actionRepository.delete(action.id);
-    });
+        if (result) {
+          arr.splice(indx, 1);
+        }
 
-    /**
-     * Add new action
-     */
+        return result;
+      },
+    );
+
+    // Add new action, when no id meaning it is new
     updateSwitchDto.action.forEach((action) => {
       if (action.id === undefined) {
         const newAction = this.actionRepository.create({
           key: action.key,
           value: action.value,
         });
-        suis.action.push(newAction);
+        deviceSuis.suis.actions.push(newAction);
       }
     });
 
-    const updatedSuis = await this.deviceRepository.save(suis);
+    // Save device suis and cascade update, insert, remove to suis & action
+    const updatedSuis = await this.deviceRepository.save(deviceSuis);
 
     this.eventEmitter.emit(EVENT_SWITCH_RELOAD);
 
@@ -445,6 +507,7 @@ export class DeviceService {
   }
 
   async updateRpi(id: number, updateRpiDto: UpdateRpiDto) {
+    /*
     // Find device
     const device = await this.deviceRepository.findOne({
       where: { id: id },
@@ -501,6 +564,7 @@ export class DeviceService {
       where: { id },
       relations: { rpi: true },
     });
+    */
   }
 
   async remove(id: number) {
@@ -508,17 +572,39 @@ export class DeviceService {
   }
 
   async updateState(id: number, updateStateDto: UpdateStateDto) {
-    const device = await this.deviceRepository.findOneBy({ id });
-    device.state = updateStateDto.state;
+    const device = await this.deviceRepository.findOne({
+      where: { id },
+      relations: {
+        light: true,
+        fan: true,
+        suis: true,
+      },
+    });
 
-    if (device.topic) {
-      const state = device.state === State.Off ? '0' : '1';
-      this.mqttService.publish(device.topic, state);
+    if (device.type === DeviceType.Light) {
+      device.light.state = updateStateDto.state;
 
-      await this.activityLogRepository.save({
-        level: 'log',
-        message: `${device.name} ${device.state}`,
-      });
+      if (device.light.topic) {
+        const state = device.light.state === State.Off ? '0' : '1';
+        this.mqttService.publish(device.light.topic, state);
+
+        await this.activityLogRepository.save({
+          level: 'log',
+          message: `${device.name} ${device.light.state}`,
+        });
+      }
+    } else if (device.type === DeviceType.Fan) {
+      device.fan.state = updateStateDto.state;
+
+      if (device.fan.topic) {
+        const state = device.fan.state === State.Off ? '0' : '1';
+        this.mqttService.publish(device.fan.topic, state);
+
+        await this.activityLogRepository.save({
+          level: 'log',
+          message: `${device.name} ${device.fan.state}`,
+        });
+      }
     }
 
     const saved = await this.deviceRepository.save(device);
@@ -532,18 +618,13 @@ export class DeviceService {
   async findAllAction() {
     const action = await this.actionRepository.find({
       relations: {
-        device: true,
+        suis: {
+          device: true,
+        },
       },
     });
 
-    return action.map((x) => {
-      return new ActionEntity({
-        id: x.id,
-        key: x.key,
-        value: x.value,
-        name: x.device.name,
-      });
-    });
+    return action;
   }
 
   @OnEvent(EVENT_DEVICE_UPDATE_STATE)

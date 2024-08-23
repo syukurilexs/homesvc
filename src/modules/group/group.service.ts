@@ -29,7 +29,11 @@ export class GroupService {
   findAll() {
     return this.groupRepository.find({
       relations: {
-        devices: true,
+        devices: {
+          light: true,
+          fan: true,
+          suis: true,
+        },
       },
     });
   }
@@ -37,7 +41,13 @@ export class GroupService {
   findOne(id: number) {
     return this.groupRepository.findOne({
       where: { id },
-      relations: { devices: true },
+      relations: {
+        devices: {
+          light: true,
+          fan: true,
+          suis: true,
+        },
+      },
     });
   }
 

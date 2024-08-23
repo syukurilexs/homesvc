@@ -3,19 +3,18 @@ import { DeviceType } from 'src/commons/enums/device-type.enum';
 import { State } from 'src/commons/enums/state.enum';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   OneToMany,
   OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { SceneDeviceOrm } from './scene-device.entity';
 import { TimerOrm } from './timer.entity';
-import { SelectedActionOrm } from './selected-action.entity';
 import { ContactSensorOrm } from './contact-sensor.entity';
 import { AbstractEntity } from 'src/commons/entities/abscract.entity';
 import { RpiOrm } from './rpi.entity';
+import { FanOrm } from './fan.entity';
+import { LightOrm } from './light.entity';
+import { SuisOrm } from './suis.entity';
 
 @Entity()
 export class DeviceOrm extends AbstractEntity {
@@ -29,20 +28,8 @@ export class DeviceOrm extends AbstractEntity {
   })
   type: DeviceType;
 
-  @Column({
-    type: 'simple-enum',
-    enum: State,
-    default: State.Off,
-  })
-  state: State;
-
   @Column({ default: '' })
-  topic: string;
-
-  @OneToMany(() => ActionOrm, (switchInfoOrm) => switchInfoOrm.device, {
-    cascade: ['update', 'insert'],
-  })
-  action: ActionOrm[];
+  remark: string;
 
   @OneToMany(() => SceneDeviceOrm, (sceneDevice) => sceneDevice.device)
   sceneDevice: SceneDeviceOrm[];
@@ -52,25 +39,29 @@ export class DeviceOrm extends AbstractEntity {
   })
   timers: TimerOrm[];
 
-  @OneToMany(
-    () => SelectedActionOrm,
-    (selectedAction) => selectedAction.device,
-    {
-      cascade: ['insert', 'update'],
-    },
-  )
-  selectedAction: SelectedActionOrm[];
-
   @OneToOne(() => ContactSensorOrm, (contactSensor) => contactSensor.device, {
     cascade: ['insert', 'update'],
   })
   contactSensor: ContactSensorOrm;
+
+  @OneToOne(() => FanOrm, (fan) => fan.device, {
+    cascade: ['insert', 'update'],
+  })
+  fan: FanOrm;
+
+  @OneToOne(() => LightOrm, (light) => light.device, {
+    cascade: ['insert', 'update'],
+  })
+  light: LightOrm;
+
+  @OneToOne(() => SuisOrm, (suis) => suis.device, {
+    cascade: ['insert', 'update'],
+  })
+  suis: SuisOrm;
 
   @OneToOne(() => RpiOrm, (rpi) => rpi.device, {
     cascade: ['insert', 'update'],
   })
   rpi: RpiOrm;
 
-  @Column({ default: '' })
-  remark: string;
 }

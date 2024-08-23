@@ -1,12 +1,8 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { DeviceOrm } from './device.entity';
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne } from 'typeorm';
 import { AbstractEntity } from 'src/commons/entities/abscract.entity';
+import { SuisOrm } from './suis.entity';
+import { FanOrm } from './fan.entity';
+import { LightOrm } from './light.entity';
 
 @Entity()
 export class ActionOrm extends AbstractEntity {
@@ -16,9 +12,16 @@ export class ActionOrm extends AbstractEntity {
   @Column()
   value: string;
 
-  @ManyToOne(() => DeviceOrm, (device) => device.action, {
+  @ManyToOne(() => SuisOrm, (device) => device.actions, {
     onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
   })
   @JoinColumn()
-  device: DeviceOrm;
+  suis: SuisOrm;
+
+  @ManyToMany(() => FanOrm, (fan) => fan.actions)
+  fans: FanOrm[];
+
+  @ManyToMany(() => LightOrm, (light) => light.actions)
+  lights: LightOrm[];
 }
