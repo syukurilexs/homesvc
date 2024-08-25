@@ -6,11 +6,12 @@ import { DeviceOrm } from 'src/typeorm/device.entity';
 // import { SelectedActionOrm } from 'src/typeorm/selected-action.entity';
 import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
+import { ActionOrm } from 'src/typeorm/action.entity';
 
 @Module({
   imports: [
     MqttModule,
-    TypeOrmModule.forFeature([DeviceOrm, SceneActionOrm, ActivityLogOrm]),
+    TypeOrmModule.forFeature([DeviceOrm, SceneActionOrm, ActivityLogOrm,ActionOrm]),
   ],
   providers: [SwitchService],
 })
