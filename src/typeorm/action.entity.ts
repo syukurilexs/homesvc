@@ -3,6 +3,7 @@ import { AbstractEntity } from 'src/commons/entities/abscract.entity';
 import { SuisOrm } from './suis.entity';
 import { FanOrm } from './fan.entity';
 import { LightOrm } from './light.entity';
+import { SceneOrm } from './scene.entity';
 
 @Entity()
 export class ActionOrm extends AbstractEntity {
@@ -24,4 +25,7 @@ export class ActionOrm extends AbstractEntity {
 
   @ManyToMany(() => LightOrm, (light) => light.actions)
   lights: LightOrm[];
+
+  @ManyToMany(() => SceneOrm, (scene) => scene.actions)
+  scenes: SceneOrm[];
 }

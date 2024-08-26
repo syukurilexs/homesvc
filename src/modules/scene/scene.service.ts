@@ -10,18 +10,14 @@ import { UpdateSceneDto } from './dto/update-scene.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENT_DEVICE_UPDATE_STATE } from 'src/utils/constants';
 import { DeviceToggle } from 'src/commons/types/device-toggle.type';
-import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
 import { ActionOrm } from 'src/typeorm/action.entity';
-import { Scene, SceneAction } from './entities/scene.entity';
-import { classToPlain, plainToClass } from 'class-transformer';
+import { Scene } from './entities/scene.entity';
 
 @Injectable()
 export class SceneService {
   constructor(
     @InjectRepository(ActionOrm)
     private actionRepository: Repository<ActionOrm>,
-    @InjectRepository(SceneActionOrm)
-    private sceneActionRepository: Repository<SceneActionOrm>,
     @InjectRepository(SceneOrm) private sceneRepository: Repository<SceneOrm>,
     @InjectRepository(DeviceOrm)
     private deviceRepository: Repository<DeviceOrm>,
@@ -76,6 +72,17 @@ export class SceneService {
   async create(createSceneDto: CreateSceneDto) {
     // Create scene, save scene and get saved entity
     const scene = this.sceneRepository.create({ name: createSceneDto.name });
+
+    // Get actions
+    const actions = await this.actionRepository.find({
+      where: {
+        id: In(createSceneDto.actions),
+      },
+    });
+
+    // Add actions to the scene
+    scene.actions = actions;
+
     await this.sceneRepository.save(scene);
 
     // Iterate the device of Create Scene Dto
@@ -101,25 +108,6 @@ export class SceneService {
           console.log('error find: ', error);
         });
     });
-
-    // Iterate the action from DTO
-    createSceneDto.actions.forEach((x) => {
-      // Find action from server base on id from DTO
-      this.actionRepository.findOneBy({ id: x }).then((action) => {
-        // create sceneAction and save to the server
-        const sceneAction = this.sceneActionRepository.create({
-          action: action,
-          scene: scene,
-        });
-
-        this.sceneActionRepository
-          .save(sceneAction)
-          .then()
-          .catch((error) => {
-            console.log('error saved: ', error);
-          });
-      });
-    });
   }
 
   async findAll() {
@@ -128,11 +116,9 @@ export class SceneService {
         sceneDevice: {
           device: true,
         },
-        sceneAction: {
-          action: {
-            suis: {
-              device: true,
-            },
+        actions: {
+          suis: {
+            device: true,
           },
         },
       },
@@ -150,11 +136,9 @@ export class SceneService {
         sceneDevice: {
           device: true,
         },
-        sceneAction: {
-          action: {
-            suis: {
-              device: true,
-            },
+        actions: {
+          suis: {
+            device: true,
           },
         },
       },
@@ -168,10 +152,23 @@ export class SceneService {
     // Get scene
     const scene = await this.sceneRepository.findOne({
       where: { id },
-      relations: { sceneAction: true },
+      relations: { actions: true },
     });
 
+    // Update name
     scene.name = updateSceneDto.name;
+
+    // Update actions
+    // Get actions
+    const actions = await this.actionRepository.find({
+      where: {
+        id: In(updateSceneDto.actions),
+      },
+    });
+
+    // Add actions to the scene
+    scene.actions = actions;
+
     await this.sceneRepository.save(scene);
 
     // Get scene device (intermediate table)
@@ -223,57 +220,13 @@ export class SceneService {
       sceneDeviceCreated.push(sceneDevice);
     });
 
-    // Default action to empty array to avoid find repository error
-    // when find with empty array
-    let actions: ActionOrm[] = [];
-
-    if (updateSceneDto.actions.length > 0) {
-      actions = await this.actionRepository.find({
-        where: { id: In(updateSceneDto.actions) },
-        relations: { suis: { device: true } },
-      });
-    }
-
     const updatedScene =
       await this.sceneDeviceRepository.save(sceneDeviceCreated);
-
-    if (scene.sceneAction.length === 0) {
-      for (let index = 0; index < actions.length; index++) {
-        const element = actions[index];
-
-        const sceneAction = new SceneActionOrm();
-        sceneAction.action = element;
-        sceneAction.scene = scene;
-        await this.sceneActionRepository.save(sceneAction);
-      }
-    } else {
-      /**
-       * This section need to be update
-       * current implementation is not efficient
-       * and just a quick solution
-       */
-      // Clear previous selected action
-      for (let index = 0; index < scene.sceneAction.length; index++) {
-        const element = scene.sceneAction[index];
-
-        await this.sceneActionRepository.remove(element);
-      }
-
-      // Add updated scene action
-      for (let index = 0; index < actions.length; index++) {
-        const element = actions[index];
-
-        const sceneAction = new SceneActionOrm();
-        sceneAction.action = element;
-        sceneAction.scene = scene;
-        await this.sceneActionRepository.save(sceneAction);
-      }
-    }
 
     return this.sceneRepository.find({
       where: { id },
       relations: {
-        sceneAction: true,
+        actions: true,
         sceneDevice: true,
       },
     });

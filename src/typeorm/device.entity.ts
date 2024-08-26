@@ -1,6 +1,4 @@
-import { ActionOrm } from './action.entity';
 import { DeviceType } from 'src/commons/enums/device-type.enum';
-import { State } from 'src/commons/enums/state.enum';
 import {
   Column,
   Entity,
@@ -63,5 +61,4 @@ export class DeviceOrm extends AbstractEntity {
     cascade: ['insert', 'update'],
   })
   rpi: RpiOrm;
-
 }

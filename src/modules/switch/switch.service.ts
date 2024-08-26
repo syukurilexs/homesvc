@@ -1,5 +1,5 @@
 import { MqttService } from '../mqtt/mqtt.service';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { DeviceType } from 'src/commons/enums/device-type.enum';
@@ -10,25 +10,18 @@ import {
   EVENT_DEVICE_UPDATE_STATE,
   EVENT_SWITCH_RELOAD,
 } from 'src/utils/constants';
-import { SceneActionOrm } from 'src/typeorm/scene-action.entity';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 import { ActionOrm } from 'src/typeorm/action.entity';
 import { DeviceToggle } from 'src/commons/types/device-toggle.type';
-// import { SceneOrm } from 'src/typeorm/scene.entity';
 
 @Injectable()
 export class SwitchService {
   constructor(
     @InjectRepository(DeviceOrm) private deviceRepo: Repository<DeviceOrm>,
-    // @InjectRepository(SelectedActionOrm) private selectedActionRepo: Repository<SelectedActionOrm>,
-    @InjectRepository(SceneActionOrm)
-    // private // private sceneActionRepo: Repository<SceneActionOrm>,
     @InjectRepository(ActivityLogOrm)
     private activityLogRepo: Repository<ActivityLogOrm>,
     @InjectRepository(ActionOrm)
     private actionRepo: Repository<ActionOrm>,
-    // @InjectRepository(SceneOrm)
-    // private sceneRepo: Repository<SceneOrm>,
     private readonly mqttService: MqttService,
     private readonly event: EventEmitter2,
   ) {
