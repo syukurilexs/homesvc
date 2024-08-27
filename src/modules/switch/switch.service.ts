@@ -76,6 +76,9 @@ export class SwitchService {
             relations: {
               lights: { device: true },
               fans: { device: true },
+              scenes: {
+                sceneDevice: true,
+              },
             },
           })
           .then((actions) => {
@@ -90,7 +93,9 @@ export class SwitchService {
                   // Emit toggled state to the device
                   this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
                 });
-              } else if (action.lights.length > 0) {
+              }
+
+              if (action.lights.length > 0) {
                 action.lights.forEach((light) => {
                   const state: DeviceToggle = {
                     deviceId: light.device.id,
@@ -101,70 +106,25 @@ export class SwitchService {
                   this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
                 });
               }
+
+              if (action.scenes.length > 0) {
+                action.scenes.forEach((scene) => {
+                  scene.sceneDevice.forEach((sceneDevice) => {
+                    const state: DeviceToggle = {
+                      deviceId: sceneDevice.deviceId,
+                      state:
+                        sceneDevice.state === State.Off ? State.On : State.Off,
+                    };
+
+                    // Emit toggled state to the device
+                    this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
+                  });
+                });
+              }
             });
           });
       }
     });
-
-    /*
-    this.mqttService.onSwitch().subscribe((data) => {
-      const topic = data.topic;
-      const payload = JSON.parse(data.payload.toString());
-
-      this.activityLogRepo
-        .save({
-          level: 'log',
-          message: `Receive mqtt topic "${data.topic}" with payload "${data.payload.toString()}"`,
-        })
-        .then((x) => {});
-
-      if (
-        topic !== undefined &&
-        topic !== '' &&
-        payload.action !== undefined &&
-        payload.action !== ''
-      ) {
-        // Find scene from sceneaction, then get all device from found scene
-        // then trigger device base on state of device in the found scene
-        this.sceneRepo
-          .find({
-            where: {
-              action: {
-                device: {
-                  topic,
-                },
-                key: 'action',
-                value: payload.action,
-              },
-            },
-            relations: {
-              action: {
-                device: {
-                  action: true,
-                },
-              },
-              scene: {
-                sceneDevice: true,
-              },
-            },
-          })
-          .then((sceneActions) => {
-            // Listing all device within found scene
-            // Trigger device base on state of device in the scene
-            sceneActions.forEach((sceneAction) => {
-              sceneAction.scene.sceneDevice.forEach((device) => {
-                const state: DeviceState = {
-                  deviceId: device.deviceId,
-                  state: device.state,
-                };
-
-                // Emit toggled state to the device
-                this.event.emit(EVENT_DEVICE_UPDATE_STATE, state);
-              });
-            });
-          });
-      }
-    }); */
   }
 
   @OnEvent(EVENT_SWITCH_RELOAD)
