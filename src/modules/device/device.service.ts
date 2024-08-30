@@ -11,14 +11,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceOrm } from 'src/typeorm/device.entity';
 import { DeviceType } from 'src/commons/enums/device-type.enum';
 import { Repository, In } from 'typeorm';
-import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateStateDto } from './dto/state.dto';
-import { UpdateDeviceDto } from './dto/update-device.dto';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { UpdateSwitchDto } from './dto/update-switch.dto';
 import { State } from 'src/commons/enums/state.enum';
 import {
-  EVENT_CONTACT_RELOAD,
   EVENT_DEVICE_UPDATE_STATE,
   EVENT_SWITCH_RELOAD,
   WS_DEVICE,
@@ -27,20 +24,14 @@ import { DeviceToggle } from 'src/commons/types/device-toggle.type';
 import { ActivityLogOrm } from 'src/typeorm/activity-log.entity';
 import { CreateContactDto } from './dto/create-contact-sensor.dto';
 import { ContactSensorOrm } from 'src/typeorm/contact-sensor.entity';
-import { ContactEntity } from './entities/contact.entity';
-import { SuisEntity } from './entities/suis.entity';
 import { UpdateContactDto } from './dto/update-contact.dto';
-import { LightEntity } from './entities/light.entity';
-import { ActionEntity } from './entities/action.entity';
-import { CreateRpiDto } from './dto/create-rpi.dto';
-import { RpiOrm } from 'src/typeorm/rpi.entity';
-import { RpiEntity } from './entities/rpi.entity';
-import { UpdateRpiDto } from './dto/update-rpi.dto';
+import { CreateActuatorDto } from './dto/create-actuator.dto';
+import { ActuatorOrm } from 'src/typeorm/actuator.entity';
+import { UpdateActuatorDto } from './dto/update-actuator.dto';
 import { CreateFanDto } from './dto/create-fan.dto';
 import { CreateLightDto } from './dto/create-light.dto';
 import { FanOrm } from 'src/typeorm/fan.entity';
 import { UpdateFanDto } from './dto/update-fan.dto';
-import { defaultIfEmpty } from 'rxjs';
 import { LightOrm } from 'src/typeorm/light.entity';
 import { UpdateLightDto } from './dto/update-light.dto';
 import { SuisOrm } from 'src/typeorm/suis.entity';
@@ -58,38 +49,36 @@ export class DeviceService {
     private activityLogRepository: Repository<ActivityLogOrm>,
     @InjectRepository(ContactSensorOrm)
     private contactSensorRepository: Repository<ContactSensorOrm>,
-    @InjectRepository(RpiOrm)
-    private rpiRepository: Repository<RpiOrm>,
+    @InjectRepository(ActuatorOrm)
+    private actuatorRepository: Repository<ActuatorOrm>,
     @InjectRepository(FanOrm)
     private fanRepository: Repository<FanOrm>,
     @InjectRepository(LightOrm)
     private lightRepository: Repository<LightOrm>,
     @InjectRepository(SuisOrm)
     private suisRepository: Repository<SuisOrm>,
-  ) {}
+  ) { }
 
-  async createRpi(createRpiDto: CreateRpiDto) {
-    /*
+  async createActuator(createActuatorDto: CreateActuatorDto) {
     // Create common device
     const deviceEntity = this.deviceRepository.create({
-      name: createRpiDto.name,
-      remark: createRpiDto.remark || '',
-      topic: createRpiDto.topic,
-      type: DeviceType.Rpi,
+      name: createActuatorDto.name,
+      remark: createActuatorDto.remark || '',
+      type: DeviceType.Actuator,
     });
 
-    // Create rpi
-    const rpiEntity = this.rpiRepository.create({
-      on: createRpiDto.on,
-      off: createRpiDto.off,
+    // Create actuator 
+    const actuatorEntity = this.actuatorRepository.create({
+      on: createActuatorDto.on,
+      off: createActuatorDto.off,
+      topic: createActuatorDto.topic,
       device: deviceEntity,
     });
 
     // Save entity and cascade
-    await this.rpiRepository.save(rpiEntity);
+    await this.actuatorRepository.save(actuatorEntity);
 
-    return this.deviceRepository.find({ relations: { rpi: true } });
-    */
+    return this.deviceRepository.find({ relations: { actuator: true } });
   }
 
   createLight(createLightDto: CreateLightDto) {
@@ -224,6 +213,7 @@ export class DeviceService {
           fan: { actions: { suis: { device: true } } },
           light: { actions: { suis: { device: true } } },
           suis: { actions: true },
+          actuator: true
         },
       });
 
@@ -234,6 +224,7 @@ export class DeviceService {
           fan: { actions: { suis: { device: true } } },
           light: { actions: { suis: { device: true } } },
           suis: { actions: true },
+          actuator: true
         },
       });
 
@@ -250,6 +241,7 @@ export class DeviceService {
         suis: {
           actions: true,
         },
+        actuator: true
       },
     });
 
@@ -506,13 +498,12 @@ export class DeviceService {
     return updatedSuis;
   }
 
-  async updateRpi(id: number, updateRpiDto: UpdateRpiDto) {
-    /*
+  async updateActuator(id: number, updateActuatorDto: UpdateActuatorDto) {
     // Find device
     const device = await this.deviceRepository.findOne({
       where: { id: id },
       relations: {
-        rpi: true,
+        actuator: true,
       },
     });
 
@@ -524,47 +515,27 @@ export class DeviceService {
       );
     }
 
-    // Update if found
-    if (updateRpiDto.name) {
-      device.name = updateRpiDto.name;
+    if (updateActuatorDto.name) {
+      device.name = updateActuatorDto.name;
     }
 
-    if (updateRpiDto.remark) {
-      device.remark = updateRpiDto.remark;
+    if (updateActuatorDto.remark) {
+      device.remark = updateActuatorDto.remark;
     }
 
-    if (updateRpiDto.topic) {
-      device.topic = updateRpiDto.topic;
+    if (updateActuatorDto.topic) {
+      device.actuator.topic = updateActuatorDto.topic;
     }
 
-    await this.deviceRepository.save(device);
-
-    // Find rpi
-    const rpi = await this.rpiRepository.findOne({
-      where: { id: device.rpi.id },
-    });
-
-    if (rpi === null) {
-      throw new BadRequestException(`Rpi Id ${device.id} not found`);
+    if (updateActuatorDto.off) {
+      device.actuator.off = updateActuatorDto.off;
     }
 
-    if (rpi) {
-      if (updateRpiDto.off) {
-        rpi.off = updateRpiDto.off;
-      }
-
-      if (updateRpiDto.on) {
-        rpi.on = updateRpiDto.on;
-      }
-
-      await this.rpiRepository.save(rpi);
+    if (updateActuatorDto.on) {
+      device.actuator.on = updateActuatorDto.on;
     }
 
-    return this.deviceRepository.findOne({
-      where: { id },
-      relations: { rpi: true },
-    });
-    */
+    return await this.deviceRepository.save(device);
   }
 
   async remove(id: number) {

@@ -9,7 +9,7 @@ import { SceneDeviceOrm } from './scene-device.entity';
 import { TimerOrm } from './timer.entity';
 import { ContactSensorOrm } from './contact-sensor.entity';
 import { AbstractEntity } from 'src/commons/entities/abscract.entity';
-import { RpiOrm } from './rpi.entity';
+import { ActuatorOrm } from './actuator.entity';
 import { FanOrm } from './fan.entity';
 import { LightOrm } from './light.entity';
 import { SuisOrm } from './suis.entity';
@@ -57,8 +57,8 @@ export class DeviceOrm extends AbstractEntity {
   })
   suis: SuisOrm;
 
-  @OneToOne(() => RpiOrm, (rpi) => rpi.device, {
+  @OneToOne(() => ActuatorOrm, (actuator) => actuator.device, {
     cascade: ['insert', 'update'],
   })
-  rpi: RpiOrm;
+  actuator: ActuatorOrm;
 }

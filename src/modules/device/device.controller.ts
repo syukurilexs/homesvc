@@ -13,18 +13,15 @@ import {
   ClassSerializerInterceptor,
 } from '@nestjs/common';
 import {
-  ApiBody,
-  ApiExtraModels,
   ApiQuery,
   ApiTags,
-  getSchemaPath,
 } from '@nestjs/swagger';
 import { DeviceService } from './device.service';
 import { UpdateStateDto } from './dto/state.dto';
 import { CreateSwitchDto } from './dto/create-switch.dto';
 import { CreateContactDto as CreateContactSensorDto } from './dto/create-contact-sensor.dto';
-import { CreateRpiDto } from './dto/create-rpi.dto';
-import { UpdateRpiDto } from './dto/update-rpi.dto';
+import { CreateActuatorDto } from './dto/create-actuator.dto';
+import { UpdateActuatorDto } from './dto/update-actuator.dto';
 import { CreateFanDto } from './dto/create-fan.dto';
 import { CreateLightDto } from './dto/create-light.dto';
 import { UpdateFanDto } from './dto/update-fan.dto';
@@ -55,9 +52,9 @@ export class DeviceController {
     return this.deviceService.createContactSensor(createContactSensorDto);
   }
 
-  @Post('rpi')
-  createRpi(@Body() createRpiDto: CreateRpiDto) {
-    return this.deviceService.createRpi(createRpiDto);
+  @Post('actuator')
+  createRpi(@Body() createActuatorDto: CreateActuatorDto) {
+    return this.deviceService.createActuator(createActuatorDto);
   }
 
   @UseInterceptors(ClassSerializerInterceptor)
@@ -103,9 +100,9 @@ export class DeviceController {
     return this.deviceService.updateSwitch(+id, updateSwitchDto);
   }
 
-  @Patch('rpi/:id')
-  updateRpi(@Param('id') id: string, @Body() updateRpiDto: UpdateRpiDto) {
-    return this.deviceService.updateRpi(+id, updateRpiDto);
+  @Patch('actuator/:id')
+  updateActuator(@Param('id') id: string, @Body() updateActuatorDto: UpdateActuatorDto) {
+    return this.deviceService.updateActuator(+id, updateActuatorDto);
   }
 
   @Delete(':id')

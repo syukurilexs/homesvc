@@ -8,15 +8,18 @@ import {
 import { DeviceOrm } from './device.entity';
 
 @Entity()
-export class RpiOrm extends AbstractEntity {
-  @Column()
+export class ActuatorOrm extends AbstractEntity {
+  @Column({default: ''})
   on: string;
 
-  @Column()
+  @Column({default: ''})
   off: string;
 
+  @Column()
+  topic: string;
+
   @JoinColumn()
-  @OneToOne(() => DeviceOrm, (device) => device.contactSensor, {
+  @OneToOne(() => DeviceOrm, (device) => device.actuator, {
     cascade: true,
     onDelete: 'CASCADE',
   })
