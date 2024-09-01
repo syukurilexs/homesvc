@@ -61,4 +61,10 @@ export class DeviceOrm extends AbstractEntity {
     cascade: ['insert', 'update'],
   })
   actuator: ActuatorOrm;
+
+  @OneToMany(() => LightOrm, (light) => light.actuator)
+  actuatorLight: LightOrm[];
+
+  @OneToMany(() => FanOrm, (light) => light.actuator)
+  actuatorFan: FanOrm[];
 }

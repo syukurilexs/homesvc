@@ -14,11 +14,18 @@ export class MqttService {
   constructor(
     @Inject(MQTT_CLIENT_INSTANCE) private readonly mqttClient: MqttClient,
     @InjectRepository(DeviceOrm) private deviceRepo: Repository<DeviceOrm>,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  publish(topic: string, message: string) {
-    this.mqttClient.publish(topic, message);
+  publish(topic: string, message: string | Record<string, string>) {
+    let output: string;
+    if (typeof message === 'object') {
+      output = JSON.stringify(message);
+    } else {
+      output = message;
+    }
+
+    this.mqttClient.publish(topic, output);
   }
 
   subscribe(topic: string) {
@@ -46,16 +53,15 @@ export class MqttService {
             });
           }
         });
-      }
+      },
     );
 
     return switch$;
   }
 
-  
   /**
    * An Observable to receive data from mqtt specifically
-   * for contact sensor 
+   * for contact sensor
    * @date 3/31/2024 - 8:25:19 AM
    *
    * @returns {*}
@@ -75,7 +81,7 @@ export class MqttService {
             });
           }
         });
-      }
+      },
     );
 
     return contactSensor;

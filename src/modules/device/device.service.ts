@@ -57,7 +57,7 @@ export class DeviceService {
     private lightRepository: Repository<LightOrm>,
     @InjectRepository(SuisOrm)
     private suisRepository: Repository<SuisOrm>,
-  ) { }
+  ) {}
 
   async createActuator(createActuatorDto: CreateActuatorDto) {
     // Create common device
@@ -67,8 +67,9 @@ export class DeviceService {
       type: DeviceType.Actuator,
     });
 
-    // Create actuator 
+    // Create actuator
     const actuatorEntity = this.actuatorRepository.create({
+      key: createActuatorDto.key,
       on: createActuatorDto.on,
       off: createActuatorDto.off,
       topic: createActuatorDto.topic,
@@ -81,7 +82,7 @@ export class DeviceService {
     return this.deviceRepository.find({ relations: { actuator: true } });
   }
 
-  createLight(createLightDto: CreateLightDto) {
+  async createLight(createLightDto: CreateLightDto) {
     // Create common device
     const deviceEntity = this.deviceRepository.create({
       name: createLightDto.name,
@@ -94,6 +95,16 @@ export class DeviceService {
       topic: createLightDto.topic,
     });
     deviceEntity.light = lightEntity;
+
+    // Get actuator
+    if (createLightDto.actuator && createLightDto.actuator > -1) {
+      const actuator = await this.deviceRepository.findOneBy({
+        id: createLightDto.actuator,
+      });
+      if (actuator) {
+        lightEntity.actuator = actuator;
+      }
+    }
 
     // Save device and cascade to light
     return this.deviceRepository.save(deviceEntity);
@@ -120,6 +131,16 @@ export class DeviceService {
       topic: createFanDto.topic,
     });
     deviceEntity.fan = fanEntity;
+
+    // Get actuator
+    if (createFanDto.actuator && createFanDto.actuator > -1) {
+      const actuator = await this.deviceRepository.findOneBy({
+        id: createFanDto.actuator,
+      });
+      if (actuator) {
+        fanEntity.actuator = actuator;
+      }
+    }
 
     // Get action from Action Table based on selected action from input DTO
     const foundAction = await this.actionRepository.find({
@@ -210,10 +231,16 @@ export class DeviceService {
           type: type,
         },
         relations: {
-          fan: { actions: { suis: { device: true } } },
-          light: { actions: { suis: { device: true } } },
+          fan: {
+            actions: { suis: { device: true } },
+            actuator: { actuator: true },
+          },
+          light: {
+            actions: { suis: { device: true } },
+            actuator: { actuator: true },
+          },
           suis: { actions: true },
-          actuator: true
+          actuator: true,
         },
       });
 
@@ -221,10 +248,16 @@ export class DeviceService {
     } else {
       const output = await this.deviceRepository.find({
         relations: {
-          fan: { actions: { suis: { device: true } } },
-          light: { actions: { suis: { device: true } } },
+          fan: {
+            actions: { suis: { device: true } },
+            actuator: { actuator: true },
+          },
+          light: {
+            actions: { suis: { device: true } },
+            actuator: { actuator: true },
+          },
           suis: { actions: true },
-          actuator: true
+          actuator: true,
         },
       });
 
@@ -236,12 +269,18 @@ export class DeviceService {
     const output = await this.deviceRepository.findOne({
       where: { id },
       relations: {
-        fan: { actions: { suis: { device: true } } },
-        light: { actions: { suis: { device: true } } },
+        fan: {
+          actions: { suis: { device: true } },
+          actuator: { actuator: true },
+        },
+        light: {
+          actions: { suis: { device: true } },
+          actuator: { actuator: true },
+        },
         suis: {
           actions: true,
         },
-        actuator: true
+        actuator: true,
       },
     });
 
@@ -349,6 +388,16 @@ export class DeviceService {
 
     device.light.actions = actions;
 
+    // Get actuator
+    if (updateLightDto.actuator) {
+      const actuator = await this.deviceRepository.findOne({
+        where: {
+          id: updateLightDto.actuator,
+        },
+      });
+
+      device.light.actuator = actuator;
+    }
     return this.deviceRepository.save(device);
   }
 
@@ -385,6 +434,17 @@ export class DeviceService {
       },
     });
     device.fan.actions = actions;
+
+    // Get actuator
+    if (updateFanDto.actuator) {
+      const actuator = await this.deviceRepository.findOne({
+        where: {
+          id: updateFanDto.actuator,
+        },
+      });
+
+      device.fan.actuator = actuator;
+    }
 
     return this.deviceRepository.save(device);
   }
@@ -527,6 +587,12 @@ export class DeviceService {
       device.actuator.topic = updateActuatorDto.topic;
     }
 
+    if (updateActuatorDto.key) {
+      device.actuator.key = updateActuatorDto.key;
+    } else {
+      device.actuator.key = '';
+    }
+
     if (updateActuatorDto.off) {
       device.actuator.off = updateActuatorDto.off;
     }
@@ -546,8 +612,8 @@ export class DeviceService {
     const device = await this.deviceRepository.findOne({
       where: { id },
       relations: {
-        light: true,
-        fan: true,
+        light: { actuator: { actuator: true } },
+        fan: { actuator: { actuator: true } },
         suis: true,
       },
     });
@@ -555,9 +621,24 @@ export class DeviceService {
     if (device.type === DeviceType.Light) {
       device.light.state = updateStateDto.state;
 
-      if (device.light.topic) {
-        const state = device.light.state === State.Off ? '0' : '1';
-        this.mqttService.publish(device.light.topic, state);
+      if (device.light.actuator) {
+        let message: string | Record<string, string>;
+        const state =
+          device.light.state === State.Off
+            ? device.light.actuator.actuator.off
+            : device.light.actuator.actuator.on;
+
+        if (
+          device.light.actuator.actuator.key &&
+          device.light.actuator.actuator.key.length > 0
+        ) {
+          message = {};
+          message[device.light.actuator.actuator.key] = state;
+        } else {
+          message = state;
+        }
+
+        this.mqttService.publish(device.light.actuator.actuator.topic, message);
 
         await this.activityLogRepository.save({
           level: 'log',
@@ -567,9 +648,24 @@ export class DeviceService {
     } else if (device.type === DeviceType.Fan) {
       device.fan.state = updateStateDto.state;
 
-      if (device.fan.topic) {
-        const state = device.fan.state === State.Off ? '0' : '1';
-        this.mqttService.publish(device.fan.topic, state);
+      if (device.fan.actuator) {
+        let message: string | Record<string, string>;
+        const state =
+          device.fan.state === State.Off
+            ? device.fan.actuator.actuator.off
+            : device.fan.actuator.actuator.on;
+
+        if (
+          device.fan.actuator.actuator.key &&
+          device.fan.actuator.actuator.key.length > 0
+        ) {
+          message = {};
+          message[device.fan.actuator.actuator.key] = state;
+        } else {
+          message = state;
+        }
+
+        this.mqttService.publish(device.fan.actuator.actuator.topic, message);
 
         await this.activityLogRepository.save({
           level: 'log',

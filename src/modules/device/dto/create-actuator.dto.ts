@@ -7,6 +7,8 @@ export class CreateActuatorDto {
   @IsNotEmpty()
   topic: string;
 
+  key: string;
+
   @IsNotEmpty()
   on: string;
 

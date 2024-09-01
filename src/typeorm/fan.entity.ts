@@ -5,6 +5,7 @@ import {
   JoinColumn,
   JoinTable,
   ManyToMany,
+  ManyToOne,
   OneToOne,
 } from 'typeorm';
 import { DeviceOrm } from './device.entity';
@@ -33,4 +34,8 @@ export class FanOrm extends AbstractEntity {
   @ManyToMany(() => ActionOrm, (action) => action.fans, { cascade: true })
   @JoinTable()
   actions: ActionOrm[];
+
+  @ManyToOne(() => DeviceOrm, (device) => device.actuatorFan)
+  @JoinColumn()
+  actuator: DeviceOrm;
 }

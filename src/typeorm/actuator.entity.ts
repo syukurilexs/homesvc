@@ -10,9 +10,12 @@ import { DeviceOrm } from './device.entity';
 @Entity()
 export class ActuatorOrm extends AbstractEntity {
   @Column({default: ''})
+  key: string;
+
+  @Column({ default: '' })
   on: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   off: string;
 
   @Column()
