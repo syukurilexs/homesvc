@@ -4,7 +4,7 @@ docker tag syukurilexshomesvc:latest syukurilexs/homesvc:latest
 docker push syukurilexs/homesvc:latest
 
 # Change this version before run
-version=1.4.1
+version=2.0.0
 docker build --pull --rm -f "Dockerfile" -t syukurilexshomesvc:$version "." 
 docker tag syukurilexshomesvc:latest syukurilexs/homesvc:$version
 docker push syukurilexs/homesvc:$version
