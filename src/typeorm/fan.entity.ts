@@ -28,9 +28,6 @@ export class FanOrm extends AbstractEntity {
   })
   state: State;
 
-  @Column({ default: '' })
-  topic: string;
-
   @ManyToMany(() => ActionOrm, (action) => action.fans, { cascade: true })
   @JoinTable()
   actions: ActionOrm[];

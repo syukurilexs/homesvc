@@ -28,9 +28,6 @@ export class LightOrm extends AbstractEntity {
   })
   state: State;
 
-  @Column({ default: '' })
-  topic: string;
-
   @ManyToMany(() => ActionOrm, (action) => action.lights, { cascade: true })
   @JoinTable()
   actions: ActionOrm[];

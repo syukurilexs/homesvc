@@ -91,9 +91,7 @@ export class DeviceService {
     });
 
     // Create light entity
-    const lightEntity = this.lightRepository.create({
-      topic: createLightDto.topic,
-    });
+    const lightEntity = this.lightRepository.create({});
     deviceEntity.light = lightEntity;
 
     // Get actuator
@@ -128,7 +126,6 @@ export class DeviceService {
     // Create fan entity
     const fanEntity = this.fanRepository.create({
       actions: [],
-      topic: createFanDto.topic,
     });
     deviceEntity.fan = fanEntity;
 
@@ -376,11 +373,6 @@ export class DeviceService {
       device.remark = updateLightDto.remark;
     }
 
-    // Topic
-    if (updateLightDto.topic) {
-      device.light.topic = updateLightDto.topic;
-    }
-
     // Get action
     const actions = await this.actionRepository.find({
       where: { id: In(updateLightDto.actions) },
@@ -420,11 +412,6 @@ export class DeviceService {
     // Remark
     if (updateFanDto.remark) {
       device.remark = updateFanDto.remark;
-    }
-
-    // Topic
-    if (updateFanDto.topic) {
-      device.fan.topic = updateFanDto.topic;
     }
 
     // Get action
