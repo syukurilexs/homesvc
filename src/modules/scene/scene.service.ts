@@ -213,7 +213,7 @@ export class SceneService {
     toAdd.forEach((x) => {
       const sceneDevice = this.sceneDeviceRepository.create({
         deviceId: x.id,
-        sceneId: sceneDevices[0].sceneId,
+        sceneId: id,
         state: x.state ? State.On : State.Off,
       });
 

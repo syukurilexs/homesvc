@@ -20,12 +20,12 @@ export class ActionOrm extends AbstractEntity {
   @JoinColumn()
   suis: SuisOrm;
 
-  @ManyToMany(() => FanOrm, (fan) => fan.actions)
+  @ManyToMany(() => FanOrm, (fan) => fan.actions, { onDelete: 'CASCADE' })
   fans: FanOrm[];
 
-  @ManyToMany(() => LightOrm, (light) => light.actions)
+  @ManyToMany(() => LightOrm, (light) => light.actions, { onDelete: 'CASCADE' })
   lights: LightOrm[];
 
-  @ManyToMany(() => SceneOrm, (scene) => scene.actions)
+  @ManyToMany(() => SceneOrm, (scene) => scene.actions, { onDelete: 'CASCADE' })
   scenes: SceneOrm[];
 }
