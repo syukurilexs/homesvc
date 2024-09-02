@@ -31,13 +31,13 @@ export class SceneDeviceOrm {
   @UpdateDateColumn()
   updatedAt: string;
 
-  @ManyToOne((type) => SceneOrm, (sceneOrm) => sceneOrm.sceneDevice, {
+  @ManyToOne(() => SceneOrm, (sceneOrm) => sceneOrm.sceneDevice, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
   scene: SceneOrm;
 
-  @ManyToOne((type) => DeviceOrm, (deviceOrm) => deviceOrm.sceneDevice, {
+  @ManyToOne(() => DeviceOrm, (deviceOrm) => deviceOrm.sceneDevice, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })

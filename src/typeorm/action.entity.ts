@@ -13,7 +13,7 @@ export class ActionOrm extends AbstractEntity {
   @Column()
   value: string;
 
-  @ManyToOne(() => SuisOrm, (device) => device.actions, {
+  @ManyToOne(() => SuisOrm, (suis) => suis.actions, {
     onDelete: 'CASCADE',
     orphanedRowAction: 'delete',
   })

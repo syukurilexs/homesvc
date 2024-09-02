@@ -500,7 +500,6 @@ export class DeviceService {
   }
 
   async updateSwitch(id: number, updateSwitchDto: UpdateSwitchDto) {
-    console.log(updateSwitchDto);
     const deviceSuis = await this.deviceRepository.findOne({
       where: { id },
       relations: {
