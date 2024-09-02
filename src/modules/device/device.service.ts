@@ -102,7 +102,7 @@ export class DeviceService {
         id: createLightDto.actuator,
       });
       if (actuator) {
-        lightEntity.actuator = actuator;
+        lightEntity.deviceActuator = actuator;
       }
     }
 
@@ -138,7 +138,7 @@ export class DeviceService {
         id: createFanDto.actuator,
       });
       if (actuator) {
-        fanEntity.actuator = actuator;
+        fanEntity.deviceActuator = actuator;
       }
     }
 
@@ -233,11 +233,11 @@ export class DeviceService {
         relations: {
           fan: {
             actions: { suis: { device: true } },
-            actuator: { actuator: true },
+            deviceActuator: { actuator: true },
           },
           light: {
             actions: { suis: { device: true } },
-            actuator: { actuator: true },
+            deviceActuator: { actuator: true },
           },
           suis: { actions: true },
           actuator: true,
@@ -250,11 +250,11 @@ export class DeviceService {
         relations: {
           fan: {
             actions: { suis: { device: true } },
-            actuator: { actuator: true },
+            deviceActuator: { actuator: true },
           },
           light: {
             actions: { suis: { device: true } },
-            actuator: { actuator: true },
+            deviceActuator: { actuator: true },
           },
           suis: { actions: true },
           actuator: true,
@@ -271,11 +271,11 @@ export class DeviceService {
       relations: {
         fan: {
           actions: { suis: { device: true } },
-          actuator: { actuator: true },
+          deviceActuator: { actuator: true },
         },
         light: {
           actions: { suis: { device: true } },
-          actuator: { actuator: true },
+          deviceActuator: { actuator: true },
         },
         suis: {
           actions: true,
@@ -396,7 +396,7 @@ export class DeviceService {
         },
       });
 
-      device.light.actuator = actuator;
+      device.light.deviceActuator = actuator;
     }
     return this.deviceRepository.save(device);
   }
@@ -443,7 +443,7 @@ export class DeviceService {
         },
       });
 
-      device.fan.actuator = actuator;
+      device.fan.deviceActuator = actuator;
     }
 
     return this.deviceRepository.save(device);
@@ -612,8 +612,8 @@ export class DeviceService {
     const device = await this.deviceRepository.findOne({
       where: { id },
       relations: {
-        light: { actuator: { actuator: true } },
-        fan: { actuator: { actuator: true } },
+        light: { deviceActuator: { actuator: true } },
+        fan: { deviceActuator: { actuator: true } },
         suis: true,
       },
     });
@@ -621,24 +621,27 @@ export class DeviceService {
     if (device.type === DeviceType.Light) {
       device.light.state = updateStateDto.state;
 
-      if (device.light.actuator) {
+      if (device.light.deviceActuator) {
         let message: string | Record<string, string>;
         const state =
           device.light.state === State.Off
-            ? device.light.actuator.actuator.off
-            : device.light.actuator.actuator.on;
+            ? device.light.deviceActuator.actuator.off
+            : device.light.deviceActuator.actuator.on;
 
         if (
-          device.light.actuator.actuator.key &&
-          device.light.actuator.actuator.key.length > 0
+          device.light.deviceActuator.actuator.key &&
+          device.light.deviceActuator.actuator.key.length > 0
         ) {
           message = {};
-          message[device.light.actuator.actuator.key] = state;
+          message[device.light.deviceActuator.actuator.key] = state;
         } else {
           message = state;
         }
 
-        this.mqttService.publish(device.light.actuator.actuator.topic, message);
+        this.mqttService.publish(
+          device.light.deviceActuator.actuator.topic,
+          message,
+        );
 
         await this.activityLogRepository.save({
           level: 'log',
@@ -648,24 +651,27 @@ export class DeviceService {
     } else if (device.type === DeviceType.Fan) {
       device.fan.state = updateStateDto.state;
 
-      if (device.fan.actuator) {
+      if (device.fan.deviceActuator) {
         let message: string | Record<string, string>;
         const state =
           device.fan.state === State.Off
-            ? device.fan.actuator.actuator.off
-            : device.fan.actuator.actuator.on;
+            ? device.fan.deviceActuator.actuator.off
+            : device.fan.deviceActuator.actuator.on;
 
         if (
-          device.fan.actuator.actuator.key &&
-          device.fan.actuator.actuator.key.length > 0
+          device.fan.deviceActuator.actuator.key &&
+          device.fan.deviceActuator.actuator.key.length > 0
         ) {
           message = {};
-          message[device.fan.actuator.actuator.key] = state;
+          message[device.fan.deviceActuator.actuator.key] = state;
         } else {
           message = state;
         }
 
-        this.mqttService.publish(device.fan.actuator.actuator.topic, message);
+        this.mqttService.publish(
+          device.fan.deviceActuator.actuator.topic,
+          message,
+        );
 
         await this.activityLogRepository.save({
           level: 'log',

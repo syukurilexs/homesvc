@@ -37,5 +37,5 @@ export class FanOrm extends AbstractEntity {
 
   @ManyToOne(() => DeviceOrm, (device) => device.actuatorFan)
   @JoinColumn()
-  actuator: DeviceOrm;
+  deviceActuator: DeviceOrm;
 }

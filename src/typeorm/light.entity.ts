@@ -37,5 +37,5 @@ export class LightOrm extends AbstractEntity {
 
   @ManyToOne(() => DeviceOrm, (device) => device.actuatorLight)
   @JoinColumn()
-  actuator: DeviceOrm;
+  deviceActuator: DeviceOrm;
 }

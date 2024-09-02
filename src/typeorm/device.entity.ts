@@ -1,10 +1,5 @@
 import { DeviceType } from 'src/commons/enums/device-type.enum';
-import {
-  Column,
-  Entity,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
 import { SceneDeviceOrm } from './scene-device.entity';
 import { TimerOrm } from './timer.entity';
 import { ContactSensorOrm } from './contact-sensor.entity';
@@ -62,9 +57,9 @@ export class DeviceOrm extends AbstractEntity {
   })
   actuator: ActuatorOrm;
 
-  @OneToMany(() => LightOrm, (light) => light.actuator)
+  @OneToMany(() => LightOrm, (light) => light.deviceActuator)
   actuatorLight: LightOrm[];
 
-  @OneToMany(() => FanOrm, (light) => light.actuator)
+  @OneToMany(() => FanOrm, (light) => light.deviceActuator)
   actuatorFan: FanOrm[];
 }
