@@ -35,7 +35,9 @@ export class FanOrm extends AbstractEntity {
   @JoinTable()
   actions: ActionOrm[];
 
-  @ManyToOne(() => DeviceOrm, (device) => device.actuatorFan)
+  @ManyToOne(() => DeviceOrm, (device) => device.actuatorFan, {
+    onDelete: 'SET NULL',
+  })
   @JoinColumn()
   deviceActuator: DeviceOrm;
 }

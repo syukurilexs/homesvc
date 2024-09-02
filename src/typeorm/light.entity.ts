@@ -35,7 +35,9 @@ export class LightOrm extends AbstractEntity {
   @JoinTable()
   actions: ActionOrm[];
 
-  @ManyToOne(() => DeviceOrm, (device) => device.actuatorLight)
+  @ManyToOne(() => DeviceOrm, (device) => device.actuatorLight, {
+    onDelete: 'SET NULL',
+  })
   @JoinColumn()
   deviceActuator: DeviceOrm;
 }
